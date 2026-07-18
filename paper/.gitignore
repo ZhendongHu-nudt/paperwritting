@@ -15,3 +15,7 @@ build/
 *.synctex.gz
 *.run.xml
 *.pdf
+
+# Keep the compiled paper and PDF figures required by the LaTeX source.
+!paper.pdf
+!figures/*.pdf
