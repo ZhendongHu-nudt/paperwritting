@@ -1,0 +1,30 @@
+% !TEX root = paper.tex
+% =============================================================
+% RAR -- Abstract v0
+% Source-of-truth: project_context.md (binding constraints).
+% Stage 3 of paper-writing skill. Written LAST per Principle 1.
+% Last updated: 2026-07-12
+%
+% Targets ~200-250 words. Locks:
+%   - Headline: forgetting 35.5%--67.5%; mix up to 11.7 pp
+%   - Six datasets
+%   - Coined term: knowledge ownership estimation
+%   - Design spine (implicit): recon -> routing -> dual heads -> calibration
+%
+% Conventions:
+%   - KDD venue: no \smartparagraph.
+%   - Zero hedging, active voice, no em-dashes.
+%   - Headline numbers anchored to §4 evaluation.
+% =============================================================
+
+\begin{abstract}
+Encrypted-traffic classifiers must continuously absorb emerging applications and threats without retraining from scratch. Although class-incremental learning (CIL) enables continual model updates, existing methods typically rely on replay, knowledge distillation, or regularization to mitigate catastrophic forgetting. However, these mechanisms remain largely sample-agnostic, lacking a way to estimate whether an incoming sample is more closely associated with previously acquired or newly emerging knowledge.
+
+We observe that an autoencoder trained on frozen encoder features of replayed old-class samples reconstructs old samples with lower error than new ones. This observation suggests that reconstruction error provides an input-dependent signal of whether a sample is better represented by previously acquired or newly arriving knowledge. We call this signal \emph{knowledge ownership}.
+
+Based on this observation, we propose Reconstruction-Aware Routing (RAR), which converts reconstruction error into a sample-level routing score and uses it to softly weight two dedicated classification heads. A lightweight logit calibration module further aligns the dual-head outputs into a unified prediction space.
+
+Experiments on six public encrypted-traffic datasets demonstrate that RAR reduces forgetting by 35.5\%--67.5\% over competitive CIL baselines while improving mixed-class accuracy by up to 11.7 percentage points. Ablation studies further show the respective contributions of knowledge ownership estimation, dual-head soft routing, and logit calibration. These results support reconstruction-derived routing as a useful sample-aware mechanism for encrypted-traffic class-incremental learning.
+
+
+\end{abstract}

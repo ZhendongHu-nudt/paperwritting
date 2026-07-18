@@ -1,0 +1,63 @@
+% !TEX root = paper.tex
+% =============================================================
+% RAR -- Background and Problem Setup v0
+% Source-of-truth: project_context.md (binding constraints).
+% Stage 3 of paper-writing skill. Draft 0 intro frozen 2026-07-09.
+% Last updated: 2026-07-09
+%
+% Three structural gaps are LOCKED 2026-07-09 :
+%   (i)   shared classifier competition from head expansion
+%   (ii)  knowledge-unaware distillation (uniform)
+%   (iii) limited replay representation
+%
+% Conventions:
+%   - KDD venue: integrated related work, colon-style subtitles,
+%     no \smartparagraph, no em-dashes.
+%   - Headings are claims. Topic sentences assert claims.
+%   - Cite prior work where applicable; carry forward from §1.
+% =============================================================
+
+\section{Preliminaries}\label{sec:background}
+
+% Section opener: claim-first. The three structural gaps that follow
+% are the motivation for RAR's design (§3). Tight to ~1 page.
+
+\subsection{The Encrypted-Traffic CIL Setup}
+
+% Topic sentence 1: formalize the problem
+We formalize the problem as class-incremental learning (CIL). At the base step, we train on $K_0$ classes. At each incremental step, $K_i$ new classes arrive with a small replay buffer of old samples.
+
+% Topic sentence 2: incremental-step objective
+At the incremental step $T_i$ the classifier must satisfy two competing objectives. It must acquire the new classes with high accuracy, and it must retain the old classes despite the head-expansion operation that adds $K_i$ output dimensions to the classification layer. The replay buffer typically holds a fixed small number of samples per old class, which is the only bridge between the base step and the incremental step.
+
+\begin{figure*}[t]
+\centering
+\input{figures/fig_cil_setup}
+\caption{Class-incremental learning setup in encrypted-traffic classification.}
+\label{fig:cil-setup}
+\Description{Timeline diagram showing three incremental steps of class-incremental learning for encrypted traffic classification. Base step trains an encoder and head on old classes. Subsequent steps add new classes while replaying old samples through a small buffer. Three structural gaps are annotated: shared classifier competition, uniform distillation, and limited replay.}
+\end{figure*}
+
+% Topic sentence 3: encrypted-traffic specifics
+Encrypted-traffic classification adds three domain-specific pressures on top of generic CIL. Packet payloads are encrypted and uninformative; the classifier must rely on packet length, timing, direction, and TLS handshake features. Class boundaries shift as new applications launch and new malware families appear. And the deployed classifier must run online under tight latency budgets, so retraining on the full history on every addition is rarely practical.
+
+\subsection{The ET-BERT Backbone}
+
+RAR adopts ET-BERT~\cite{lin2022etbert} as its frozen encoder. ET-BERT is a Transformer pre-trained on large-scale unlabeled encrypted traffic through two self-supervised tasks: a Masked BURST Model that captures byte-level correlations within transmission bursts, and a Same-origin BURST Prediction that models sequential relationships across consecutive bursts. The pre-trained tokenizer converts raw packet sequences into fixed-length input tokens, and the encoder produces class-separable features that transfer across encrypted-traffic domains without per-task labels. We freeze the encoder at its pre-trained weights and build the routing mechanism on top of its representations; the frozen encoder is shared by both classification heads and the reconstruction autoencoder.
+
+\subsection{Three Structural Gaps}
+
+% Topic sentence 1: claim
+Three structural gaps in prior CIL methods explain why forgetting persists on encrypted-traffic classification; closing any one of them in isolation is insufficient.
+
+% Gap 1: shared classifier competition
+\paragraph{Shared classifier competition.}
+Expanding the classification head to accommodate new classes forces old and new outputs to share one decision space~\cite{rebuffi2017icarl,wu2019bic}. Under class imbalance, the shared cross-entropy objective can favor the group with larger or more recent gradients and shift predictions away from old classes. Replay can mitigate this effect, but its effectiveness depends on the size and representativeness of the buffer.
+
+% Gap 2: knowledge-unaware distillation
+\paragraph{Knowledge-unaware distillation.}
+Distillation-based CIL methods (LwF~\cite{li2017lwf}, iCaRL~\cite{rebuffi2017icarl}) apply the same distillation loss to every sample, regardless of whether the sample carries old or new knowledge. The uniform signal cannot tell a sample that is close to the old-knowledge manifold from one that is far from it; both contribute the same gradient to the new model. Distillation alone therefore preserves the average old-knowledge behavior but loses the per-sample distinction that incremental classification needs.
+
+% Gap 3: limited replay representation
+\paragraph{Limited replay representation.}
+Replay-based CIL methods (DER~\cite{yan2021der}, iCaRL~\cite{rebuffi2017icarl}) depend on a small buffer of stored old samples that cannot represent the full old-class distribution. Below a buffer-size threshold the replay buffer stores only a few local modes of each old class, and the autoencoder or replayed features that depend on the buffer inherit the under-representation. The forgetting rate therefore degrades sharply below a buffer-size threshold that the deployment context often cannot meet.

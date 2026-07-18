@@ -1,0 +1,54 @@
+% !TEX root = paper.tex
+% =============================================================
+% RAR -- Final Introduction v0
+% Source-of-truth: project_context.md (binding constraints).
+% Stage 3 of paper-writing skill. Written from scratch per Principle 1.
+% Last updated: 2026-07-09
+%
+% Differs from intro_draft0.tex in:
+%   - Key Abstraction now opens with the coined term "knowledge
+%     ownership estimation" rather than introducing it tentatively.
+%   - Contributions are claim-first with embedded headline numbers.
+%   - Results Preview anchors the closing with the locked headline.
+%   - Outline paragraph added at the end.
+%
+% The Draft 0 introduction (intro_draft0.tex) remains as reference.
+% On integration: replace intro_draft0.tex with this file and delete
+% the draft. Verify all headline numbers against the final tables.
+% =============================================================
+
+\section{Introduction}
+
+% Stakes: problem-first, specific actors. Principle 7: domain before
+% method. The ML/AI component enters at the Key Abstraction.
+Encrypted-traffic classifiers identify applications and threats from packet metadata, length distributions, and timing patterns alone, and the set of classes they must recognize grows continuously. New applications launch, new malware families appear, and each addition forces the classifier to recognize a class it has never seen. Operators run these classifiers under tight latency budgets and cannot retrain from scratch on every addition; the retraining cost grows with the class history.
+
+% Problem Gap: structural, not quantitative. Three gaps are LOCKED
+% in project_context.md and named here to bridge to §3.
+Class-incremental learning (CIL) targets this need by adding classes without retraining on the full history. Existing CIL methods, including LwF~\cite{li2017lwf}, iCaRL~\cite{rebuffi2017icarl}, BiC~\cite{wu2019bic}, and DER~\cite{yan2021der}, mitigate forgetting through two mechanisms: replaying a small buffer of historical samples and distilling the old model into the new one. Applied to encrypted traffic, three structural gaps remain open. First, expanding the classification head makes old and new classes compete for one shared decision boundary. Second, uniform distillation treats every sample identically, regardless of whether it carries old or new knowledge. Third, replay depends on a limited buffer that cannot represent the full old-class distribution.
+
+% Key Abstraction: the coined term appears prominently. Per
+% rhetorical_moves.md, this move appears ONLY in final versions and is
+% discovered through writing. The term "knowledge ownership estimation"
+% is the paper's intellectual core.
+We observe that an autoencoder fitted to frozen features of replayed old samples tends to reconstruct old-class samples with lower error than new-class samples. Reconstruction error therefore provides an input-dependent score of compatibility with the replay-derived old-feature manifold. We call this per-input signal \emph{knowledge ownership estimation}.
+
+% Design Intuition: one-paragraph mental model. The design spine
+% (knowledge ownership estimation -> soft routing -> dual knowledge
+% paths -> calibration) is the single line that organizes §3.
+RAR (Reconstruction-Aware Routing) turns the ownership score into a soft routing weight over two classification paths: a frozen old-knowledge path inherited from the preceding step and a trainable head for the arriving classes. Both paths contribute to every prediction, weighted by the sample's estimated old/new score, and a logit calibration layer unifies their outputs into a joint prediction over all seen classes. A reconstruction temperature $\tau$ controls routing softness: small $\tau$ approaches deterministic path selection; large $\tau$ smoothly fuses both paths. The design follows a single line: knowledge ownership estimation, soft routing, dual knowledge paths, calibration.
+
+% Contributions: numbered, claim-first. Each item is a claim, not a
+% process description. "We show" preferred over "We propose".
+We make four contributions.
+\begin{enumerate}
+  \item \textbf{Sample-level knowledge ownership estimation.} We derive an old/new routing score from each sample's reconstruction error, enabling sample-aware knowledge balancing beyond uniform knowledge transfer.
+  \item \textbf{Dual-head knowledge path decoupling.} We route old and new knowledge paths to separate heads, removing the shared-classifier competition that causes forgetting.
+  \item \textbf{Logit calibration over dual knowledge paths.} We calibrate the two heads' outputs into a unified classification space, raising mixed-class accuracy by 2.3 percentage points (from 87.82\% to 90.12\%) over an uncalibrated dual-head baseline.
+  \item \textbf{Validation across six encrypted-traffic datasets.} RAR reduces forgetting by 35.5\%--67.5\% and improves mixed-class accuracy by up to 11.7 percentage points over the strongest classical CIL baseline (Adapter) on six public datasets (NUDT-Mobile, CIC-DoHBrw, CIC-IoT2023, CSTNET-TLS1.3, ISCX-Tor, EBSNN-WebApp). A complementary study shows that naive incremental forgetting persists across nine traffic-classification backbones.
+\end{enumerate}
+
+% Results Preview: anchors the introduction with the locked
+% headline numbers. Outlines the rest of the paper so the reader knows
+% what each section delivers.
+The remainder of this paper evaluates the contribution. \S\ref{sec:background} formalizes the encrypted-traffic CIL problem and its three structural gaps. \S\ref{sec:method} presents RAR's mechanism, from reconstruction error through soft routing to calibration, and closes with a training algorithm (Algorithm~1). \S\ref{sec:eval} reports empirical evidence on six datasets: RAR against classical CIL strategies on ET-BERT, a backbone study confirming that naive forgetting persists across nine encoders, a component ablation, and robustness under multi-step increments and tight replay budgets. \S\ref{sec:related} positions RAR against prior work. \S\ref{sec:conclusion} summarizes the contributions, limitations, and future directions.

@@ -1,0 +1,77 @@
+{
+    // ============================================================
+    // RAR paper - VSCode workspace settings
+    // Pairs with extensions.json (recommends LaTeX Workshop)
+    // Compile flow: pdflatex -> bibtex -> pdflatex -> pdflatex
+    // All intermediate files (.aux/.bbl/.log/...) go to build/
+    // so the paper directory stays clean.
+    // ============================================================
+
+    "latex-workshop.latex.tools": [
+        {
+            "name": "pdflatex",
+            "command": "pdflatex",
+            "args": [
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "%DOC%"
+            ],
+            "env": {}
+        },
+        {
+            "name": "bibtex",
+            "command": "bibtex",
+            "args": ["%DOCFILE%"],
+            "env": {}
+        }
+    ],
+
+    // 4-pass recipe = paper.tex fully resolves \cite and \ref.
+    // Switch to "pdflatex" (single) only for a sanity-check edit.
+    "latex-workshop.latex.recipes": [
+        {
+            "name": "pdflatex -> bibtex -> pdflatex x 2",
+            "tools": ["pdflatex", "bibtex", "pdflatex", "pdflatex"]
+        },
+        {
+            "name": "pdflatex (single pass)",
+            "tools": ["pdflatex"]
+        }
+    ],
+
+    // Default recipe — the one that runs on Ctrl+S or manual build.
+    "latex-workshop.latex.recipe.default": "pdflatex -> bibtex -> pdflatex x 2",
+
+    // Auto-build on every save (Ctrl+S) using the recipe above.
+    "latex-workshop.latex.autoBuild.run": "onSave",
+    "latex-workshop.latex.autoBuild.cleanAndRetry.enabled": true,
+
+    // PDF embedded in a VSCode tab (not external browser).
+    "latex-workshop.view.pdf.viewer": "tab",
+
+    // Show the PDF immediately after build finishes.
+    "latex-workshop.latex.autoBuild.interval": 1000,
+
+    // Forward search: double-click a line in .tex -> jumps to that point in PDF.
+    // Reverse search: Ctrl+click in PDF -> jumps to the .tex line.
+    "latex-workshop.synctex.afterBuild.enabled": true,
+
+    // Inline PDF viewer in a tab beside the editor.
+    "latex-workshop.view.pdf.viewer": "tab",
+
+    // Disable generic editor format-on-save (LaTeX files must NOT be reformatted).
+    "editor.formatOnSave": false,
+    "[latex]": {
+        "editor.wordWrap": "on",
+        "editor.tabSize": 4
+    },
+
+    // Hide build/ from the file explorer.
+    "files.exclude": {
+        "**/build": true,
+        "**/*.aux": true,
+        "**/*.log": true,
+        "**/*.bbl": true
+    }
+}

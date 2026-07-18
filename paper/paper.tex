@@ -1,0 +1,97 @@
+% =============================================================
+% RAR -- Master paper file
+% KDD 2026 submission (research track, anonymous, double-blind)
+% Built 2026-07-09 from intro_final + background + method +
+%   eval_scaffold + related_work + conclusion.
+%
+% Compile (Overleaf or local with TeX Live):
+%   pdflatex paper
+%   bibtex paper
+%   pdflatex paper
+%   pdflatex paper
+% =============================================================
+
+\documentclass[sigconf,review,anonymous]{acmart}
+%% KDD 2026 research track: double-column format.
+%% "The recommended setting for LaTeX is:
+%%   \documentclass[sigconf,review]{acmart}"
+
+% --- font encoding ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+% --- math font (acmart requires Libertine; only load libertinus-type1 for missing glyphs) ---
+\IfFileExists{libertinus-type1.sty}{\usepackage{libertinus-type1}}{}
+% If \Bbbk throws "already defined", comment out the line above.
+
+% --- packages ---
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric, fit, calc, backgrounds}
+\usepackage[ruled,linesnumbered]{algorithm2e}
+
+% --- RAR palette (Paul Tol bright, consistent with figure files) ---
+\definecolor{ptblue}{HTML}{4477AA}
+\definecolor{ptcyan}{HTML}{66CCEE}
+\definecolor{ptgreen}{HTML}{228833}
+\definecolor{ptred}{HTML}{EE6677}
+\definecolor{ptgrey}{HTML}{BBBBBB}
+
+% --- CCS concepts (ACM requirement) ---
+\begin{CCSXML}
+<ccs2012>
+ <concept>
+  <concept_id>10003033.10003079.10003084</concept_id>
+  <concept_desc>Security and privacy~Network security</concept_desc>
+  <concept_significance>500</concept_significance>
+ </concept>
+ <concept>
+  <concept_id>10010147.10010257.10010258.10010261</concept_id>
+  <concept_desc>Computing methodologies~Transfer learning</concept_desc>
+  <concept_significance>500</concept_significance>
+ </concept>
+ <concept>
+  <concept_id>10003033.10003079.10011665</concept_id>
+  <concept_desc>Networks~Traffic classification</concept_desc>
+  <concept_significance>300</concept_significance>
+ </concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Security and privacy~Network security}
+\ccsdesc[500]{Computing methodologies~Transfer learning}
+\ccsdesc[300]{Networks~Traffic classification}
+
+% --- keywords (ACM requirement) ---
+\keywords{Encrypted Traffic Classification, Class-Incremental Learning, Knowledge Distillation, Reconstruction-Aware Routing}
+
+% --- metadata ---
+\title{RAR: Reconstruction-Aware Routing with Dual-Head Calibration\\for Encrypted Traffic Class-Incremental Learning}
+\author{Anonymous}
+\affiliation{\institution{Anonymous Institution}\country{}}
+\date{}
+
+\raggedbottom
+\begin{document}
+
+% --- abstract (BEFORE \maketitle per acmart requirement) ---
+\input{abstract}
+\maketitle
+
+% --- numbered sections ---
+\input{intro_final}
+\input{background}
+\input{method}
+\input{eval_scaffold}
+\input{related_work}
+\input{conclusion}
+
+% --- bibliography ---
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\end{document}

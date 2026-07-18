@@ -1,0 +1,95 @@
+% =============================================================
+% RAR -- Figure 1: RAR architecture overview
+% Label: fig:rar-architecture
+% Used in: §3 Method (after the section opener).
+% Format: input-style (no \documentclass). \input{} from paper.tex.
+%   For standalone visual preview, wrap in
+%     \documentclass[border=5pt]{standalone}
+%     \usepackage{tikz} \usetikzlibrary{...}
+%     \definecolor{ptblue}{HTML}{4477AA} ... (palette)
+% Color palette: Paul Tol bright (matches figures/fig_*.tex).
+% =============================================================
+
+\begin{tikzpicture}[
+    node distance=0.55cm and 0.7cm,
+    box/.style={rectangle, draw, thick, rounded corners=3pt,
+                minimum width=1.9cm, minimum height=0.75cm,
+                font=\small\sffamily, align=center},
+    raw/.style={box, fill=ptgrey!25},
+    enc/.style={box, fill=ptblue!18},
+    ae/.style={box, fill=ptcyan!18},
+    prob/.style={box, fill=ptblue!10},
+    hold/.style={box, fill=ptgreen!18},
+    hnew/.style={box, fill=ptred!18},
+    calib/.style={box, fill=ptblue!22},
+    small/.style={font=\footnotesize\sffamily},
+    smallit/.style={font=\footnotesize\sffamily\itshape},
+    arrow/.style={-{Stealth[length=5pt]}, thick},
+    arrowthin/.style={-{Stealth[length=4pt]}, thick, color=ptgrey},
+]
+
+% --- input ---
+\node[raw] (in) {Raw\\input $x$};
+
+% --- frozen encoder ---
+\node[enc, right=of in] (enc) {Frozen\\encoder $f$};
+\node[smallit, below=1pt of enc, color=ptblue!70!black] {frozen, shared};
+
+% --- feature (fork point) ---
+\node[small, right=0.55cm of enc] (feat) {$f(x)$};
+
+% --- autoencoder branch (drops down then up) ---
+\node[ae, below=1.0cm of feat] (ae) {Recon.\\autoencoder $g_\phi$};
+\node[smallit, below=1pt of ae, color=ptcyan!70!black] {trained on old};
+
+% --- sigmoid + threshold/tau ---
+\node[prob, right=1.1cm of ae] (sig) {$\sigma((\theta - e)/\tau)$};
+\node[prob, right=of sig] (gate) {log-space\\gate};
+\node[smallit, above=1pt of sig, color=ptblue!70!black] {score $s_{\mathrm{old}}$};
+\node[smallit, above=1pt of gate, color=ptblue!70!black] {$\log s \to \ell$};
+
+% --- two heads ---
+\node[hold, above=1.0cm of feat] (hold) {Old-knowledge\\head $h_{\mathrm{old}}$};
+\node[smallit, above=1pt of hold, color=ptgreen!70!black] {frozen, inherited from base};
+\node[hnew, right=2.4cm of hold] (hnew) {New-knowledge\\head $h_{\mathrm{new}}$};
+\node[smallit, above=1pt of hnew, color=ptred!70!black] {adapter + MLP, trained};
+
+% --- calibration ---
+\node[calib, right=1.3cm of hnew] (calib) {Calibration\\$b_{\mathrm{old}}, c_{\mathrm{new}}, b_{\mathrm{new}}$};
+\node[smallit, below=1pt of calib, color=ptblue!70!black] {3 scalar params};
+
+% --- output ---
+\node[raw, right=of calib] (out) {Joint\\logits};
+
+% ============== arrows ==============
+\draw[arrow] (in) -- (enc);
+\draw[arrow] (enc) -- (feat);
+
+% feature -> heads (fan-out)
+\draw[arrow] (feat) -- (hold);
+\draw[arrow] (feat) -- (hnew);
+
+% feature -> autoencoder (down)
+\draw[arrow] (feat) -- (ae);
+% autoencoder -> sigmoid -> gate
+\draw[arrow] (ae) -- (sig);
+\draw[arrow] (sig) -- (gate);
+
+% gate -> calibration (log-space routing signal feeds into combination)
+\draw[arrow] (gate.east) -- ++(0.55cm,0) |- (calib.south);
+
+% heads -> calibration
+\draw[arrow] (hold) -- (calib);
+\draw[arrow] (hnew) -- (calib);
+
+% calibration -> output
+\draw[arrow] (calib) -- (out);
+
+% --- error term annotation ---
+\node[small, color=ptgrey!80!black, above] at ($(ae)!0.5!(sig)$) {$e(x)$};
+
+% --- legend hint ---
+\node[small, color=ptgrey!70!black] at ($(in.south)+(0,-1.3cm)$)
+    {frozen encoder (blue) $\cdot$ reconstruction (cyan) $\cdot$ old (green) $\cdot$ new (red)};
+
+\end{tikzpicture}

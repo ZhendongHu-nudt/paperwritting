@@ -1,0 +1,126 @@
+% =============================================================
+% RAR -- Figure 3: Class-incremental learning setup in encrypted traffic
+% Label: fig:cil-setup
+% Used in: §2.1 The encrypted-traffic CIL setup.
+% Format: input-style (no \documentclass). \input{} from paper.tex.
+%   For standalone visual preview, wrap in
+%     \documentclass[border=5pt]{standalone}
+%     \usepackage{tikz} \usetikzlibrary{...}
+%     \definecolor{ptblue}{HTML}{4477AA} ... (palette)
+% Color palette: Paul Tol bright (matches figures/fig_*.tex).
+% =============================================================
+
+\begin{tikzpicture}[
+    node distance=0.4cm and 0.5cm,
+    enc/.style={rectangle, draw, thick, rounded corners=3pt,
+                minimum width=1.1cm, minimum height=0.7cm,
+                font=\small\sffamily, align=center, fill=ptblue!15},
+    head/.style={rectangle, draw, thick, rounded corners=3pt,
+                 minimum width=1.6cm, minimum height=0.7cm,
+                 font=\small\sffamily, align=center, fill=ptred!15},
+    buffer/.style={rectangle, draw, thick, rounded corners=2pt,
+                   minimum width=0.85cm, minimum height=0.55cm,
+                   font=\footnotesize\sffamily, fill=ptgreen!18},
+    loss/.style={rectangle, draw, thick, rounded corners=3pt,
+                 minimum width=1.2cm, minimum height=0.55cm,
+                 font=\footnotesize\sffamily, fill=ptcyan!15},
+    sample/.style={circle, draw, thick, inner sep=1pt,
+                   minimum size=0.4cm, font=\footnotesize\sffamily},
+    oldsample/.style={sample, fill=ptgreen!30},
+    newsample/.style={sample, fill=ptred!30},
+    arrow/.style={-{Stealth[length=4pt]}, thick},
+    gaparr/.style={-{Stealth[length=4pt]}, thick, dashed},
+    small/.style={font=\footnotesize\sffamily},
+    smallbf/.style={font=\footnotesize\sffamily\bfseries},
+]
+
+% ============== base step t0 ==============
+\node[smallbf] at (0,2.6) {Base step $t_0$};
+\node[enc] (e0) at (0,1.8) {encoder $f$};
+\node[head, minimum width=1.3cm] (h0) at (0,0.7) {$h_0$};
+\node[oldsample] (s0a) at (-0.5,2.0) {};
+\node[oldsample] (s0b) at (-0.2,2.1) {};
+\node[oldsample] (s0c) at (-0.8,2.1) {};
+\node[small, color=ptgreen!60!black] at (0.3,2.05) {old data, $K_0$ classes};
+
+\draw[arrow] (s0a) -- (e0);
+\draw[arrow] (s0b) -- (e0);
+\draw[arrow] (s0c) -- (e0);
+\draw[arrow] (e0) -- (h0);
+
+% ============== incremental step t1 ==============
+\node[smallbf] at (3.5,2.6) {Incremental step $t_1$};
+\node[enc, minimum width=1.0cm] (e1) at (3.5,1.8) {encoder $f$};
+\node[head, minimum width=2.0cm] (h1) at (3.5,0.7) {$h_1$ ($K_0{+}K_1$)};
+\node[buffer] (b1) at (2.3,0.7) {};
+\node[small, color=ptgreen!60!black] at (2.3,0.15) {replay};
+\node[oldsample] (s1a) at (3.0,2.0) {};
+\node[oldsample] (s1b) at (3.3,2.1) {};
+\node[newsample] (s1c) at (3.7,2.1) {};
+\node[newsample] (s1d) at (4.0,2.0) {};
+\node[small, color=ptgrey!70!black] at (3.5,2.4) {old + new};
+
+\node[loss] (l1) at (3.5,-0.05) {CE + distill};
+
+\draw[arrow] (s1a) -- (e1);
+\draw[arrow] (s1b) -- (e1);
+\draw[arrow] (s1c) -- (e1);
+\draw[arrow] (s1d) -- (e1);
+\draw[arrow] (e1) -- (h1);
+\draw[arrow] (h1) -- (l1);
+\draw[arrow] (b1) -- (l1);
+
+% ============== incremental step t2 ==============
+\node[smallbf] at (7.0,2.6) {Incremental step $t_2$};
+\node[enc, minimum width=1.0cm] (e2) at (7.0,1.8) {encoder $f$};
+\node[head, minimum width=2.6cm] (h2) at (7.0,0.7) {$h_2$ ($K_0{+}K_1{+}K_2$)};
+\node[buffer] (b2) at (5.8,0.7) {};
+\node[small, color=ptgreen!60!black] at (5.8,0.15) {replay};
+\node[oldsample] (s2a) at (6.5,2.0) {};
+\node[oldsample] (s2b) at (6.8,2.1) {};
+\node[newsample] (s2c) at (7.2,2.1) {};
+\node[newsample] (s2d) at (7.5,2.0) {};
+\node[loss] (l2) at (7.0,-0.05) {CE + distill};
+
+\draw[arrow] (s2a) -- (e2);
+\draw[arrow] (s2b) -- (e2);
+\draw[arrow] (s2c) -- (e2);
+\draw[arrow] (s2d) -- (e2);
+\draw[arrow] (e2) -- (h2);
+\draw[arrow] (h2) -- (l2);
+\draw[arrow] (b2) -- (l2);
+
+% ============== dotted continuation ==============
+\node[small, color=ptgrey!80!black] at (10.0,2.6) {$\cdots$};
+\node[enc, minimum width=0.9cm] (eT) at (10.0,1.8) {encoder $f$};
+\node[head, minimum width=1.3cm] (hT) at (10.0,0.7) {$h_T$};
+\node[buffer] (bT) at (9.2,0.7) {};
+
+\draw[arrow, dotted, color=ptgrey] (h1.east) -- (h2.west);
+\draw[arrow, dotted, color=ptgrey] (h2.east) -- (hT.west);
+
+% ============== time axis ==============
+\draw[arrow, color=ptgrey] (-1.5,0.0) -- (11.0,0.0);
+\node[smallbf, color=ptgrey!80!black, right] at (11.0,-0.05) {time};
+
+% ============== three structural gaps (callouts) ==============
+% Gap 1: shared classifier -> arrow into h1 (head expansion)
+\draw[gaparr, color=ptblue] (3.5,-1.1) -- (3.5,0.15);
+\node[smallbf, color=ptblue, align=center] at (3.5,-1.55)
+    {(1) Shared\\classifier};
+
+% Gap 2: uniform distillation -> arrow into l1
+\draw[gaparr, color=ptcyan] (3.5,-1.1) -- (3.5,-0.3);
+\node[smallbf, color=ptcyan!70!black, align=center] at (3.5,-2.1)
+    {(2) Uniform\\distillation};
+
+% Gap 3: limited replay -> arrow into b1
+\draw[gaparr, color=ptgreen!70!black] (2.3,-1.1) -- (2.3,0.35);
+\node[smallbf, color=ptgreen!70!black, align=center] at (2.3,-2.1)
+    {(3) Limited\\replay};
+
+% ============== legend hint ==============
+\node[small, color=ptgrey!70!black] at (5.5,-2.7)
+    {frozen encoder (blue) $\cdot$ replay buffer (green) $\cdot$ new classes (red) $\cdot$ distillation (cyan)};
+
+\end{tikzpicture}

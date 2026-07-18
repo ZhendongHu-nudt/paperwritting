@@ -1,0 +1,17 @@
+# paper-writing skill generates this file. It contains strategic framing notes
+# and advisor commentary that should not be committed to shared repositories.
+project_context.md
+
+# LaTeX build artifacts (kept under build/ when VSCode LaTeX Workshop runs)
+build/
+*.aux
+*.bbl
+*.blg
+*.log
+*.toc
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.run.xml
+*.pdf

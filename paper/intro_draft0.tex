@@ -1,0 +1,49 @@
+% =============================================================
+% RAR — Draft 0 Introduction (DISPOSABLE SCAFFOLD)
+% Purpose: set guardrails for the evaluation. NOT the final intro.
+% The final introduction is rewritten from scratch AFTER the evaluation
+% (Principle 1, introduction-twice). Draft 0 is reference material only.
+% Mechanism: SOFT routing via reconstruction-temperature-weighted dual heads.
+% Last updated: 2026-07-09
+% =============================================================
+
+\section{Introduction}
+
+% M1 Stakes: who suffers, why the domain matters (problem-first, Principle 7)
+Encrypted-traffic classifiers identify applications and threats over traffic that no longer exposes payloads, and the set of classes they must recognize grows continuously.
+New applications launch, new malware families appear, and each addition forces the classifier to recognize a class it has never seen.
+Retraining the classifier from scratch over the full class history on every addition is expensive, and the cost grows with each new class.
+Operators need a classifier that absorbs new application and threat classes while retaining the classes it already knows.
+
+% M2 Problem Gap: three structural limitations of prior CIL methods (named baselines)
+Class-incremental learning (CIL) targets this need by adding classes without retraining on the full history.
+Existing CIL methods, including LwF, iCaRL, BiC, and DER, mitigate forgetting through two mechanisms: replaying a small buffer of historical samples and distilling the old model into the new one.
+Applied to encrypted traffic, these methods leave old classes forgotten, for three structural reasons.
+First, expanding the classification head with new-class outputs makes old and new classes compete for one shared decision boundary.
+Second, uniform distillation treats every sample identically, regardless of whether it carries old or new knowledge.
+Third, replay depends on a limited buffer that cannot represent the full old-class distribution.
+
+% M3 Key Abstraction: reconstruction error -> sample-level knowledge ownership (observation, not inevitability)
+A module reconstructed from the old model and its replay buffer tends to reproduce old-class samples with lower reconstruction error and new-class samples with higher reconstruction error.
+Reconstruction error therefore provides a sample-level knowledge ownership signal: for each input, the probability that the input belongs to old versus new knowledge.
+We call this per-input signal \emph{knowledge ownership estimation}.
+
+% M4 Design Intuition: Knowledge Ownership Estimation -> Soft Routing -> Dual Knowledge Paths -> Calibration
+RAR (Reconstruction-Aware Routing) turns the knowledge ownership signal into a soft routing weight over two knowledge paths, an old-knowledge head and a new-knowledge head.
+Both heads contribute to every prediction, weighted by the sample's estimated old/new knowledge probability.
+A reconstruction temperature $\tau$ controls routing softness: small $\tau$ approaches deterministic head selection, large $\tau$ smoothly fuses the two heads.
+RAR then calibrates the combined logits into a joint prediction over all classes.
+The probability separates old from new knowledge softly, and calibration recombines the two paths.
+The design follows a single line: knowledge ownership estimation, soft routing, dual knowledge paths, calibration.
+
+% M5 Contributions: 4 numbered, claim-first
+We make four contributions.
+\begin{enumerate}
+  \item \textbf{Sample-level knowledge ownership estimation.} We estimate each sample's old/new knowledge probability from reconstruction error, enabling sample-aware knowledge balancing beyond sample-agnostic knowledge transfer.
+  \item \textbf{Dual-head knowledge path decoupling.} We route old and new knowledge paths to separate heads, removing the shared-classifier competition that causes forgetting.
+  \item \textbf{Logit calibration over dual knowledge paths.} We calibrate the two heads' outputs into a unified classification space, raising mixed-class accuracy over an uncalibrated dual-head baseline.
+  \item \textbf{Validation across six encrypted-traffic datasets.} We show RAR reduces forgetting and improves mixed accuracy over ET-BERT-based incremental learning baselines and representative replay-based CIL methods on six public datasets (NUDT-Mobile, CIC-DoHBrw, CIC-IoT2023, CSTNET-TLS1.3, ISCX-Tor, EBSNN-WebApp).
+\end{enumerate}
+
+% M6 Results Preview: BLANK in Draft 0. Fill after evaluation.
+% Tentative headline: RAR cuts forgetting 53-67% and raises mixed-class accuracy up to 11.3% over ET-BERT across six datasets.
