@@ -1,0 +1,129 @@
+ 我现在退出cluade的话，要怎么样才能在进入这个界面填TBD,补充剩下的细节？
+
+● 你的状态已经全部存在 F:\paperwritting\paper\project_context.md 里 —— 这是 skill 的"合同"，下次进来会自动加载。
+
+  下次进来怎么继续
+
+  Step 1. 切到论文目录（重要 —— skill 会从 CWD 找 project_context.md）
+  cd F:/paperwritting/paper
+
+  Step 2. 启动 Claude Code
+  claude
+
+  Step 3. 输入 /paper-writing
+
+  skill 会自动：
+  - 读 project_context.md（已锁定部分全部恢复）
+  - 识别 Open Questions 里的 TBD
+  - 从 TBD 接着问你
+
+  两种补充 TBD 的方式
+
+  方式 A：在对话里说
+
+  ▎ "Phase 3 Q14 baseline 全名单：ET-BERT、iCaRL、BiC、Naive FT、Joint Train"
+  ▎
+  ▎ "Phase 3 Q16 数据集：ISCX-VPN-Service、CIC-IDS2017、USTC-TFC、CrossNet、AppClassNet、ISCX-Tor"
+
+  我会更新 project_context.md。
+
+  方式 B：直接编辑文件
+  打开 F:\paperwritting\paper\project_context.md，在对应 Open Questions 章节下替换 TBD，保存。下次 /paper-writing
+  加载的就是新版。
+
+  ▎ 我推荐方式 B —— 表格、baseline 全名单、章节页数这种结构化内容直接编辑比对话粘贴快。
+
+  几点要确认 / 记住
+
+  1. skill 已装好：~/.claude/skills/paper-writing/ 永久存在，下次直接用。
+  2. project_context.md 是真值源：跟 Claude 聊天里的内容不算数（重启就丢）。重要决策要么改文件，要么每次都说"请更新到
+  project_context.md"。
+  3. CWD 必须是论文目录：在别的目录跑 /paper-writing 会重新触发 brainstorming。
+  4. 不要把 project_context.md 提交到共享仓库（已加入 .gitignore）—— 它含策略性 framing
+  笔记和"导师评语"，外部合作者不需要看到。
+
+  ---
+  下次进来你只需要 3 行：
+  cd F:/paperwritting/paper
+  claude
+  # 然后在 Claude 里输入: /paper-writing
+
+  要不要现在就把你手里的 baseline / 数据集信息直接贴给我，我顺便填进去？
+
+❯ 我现在电脑要没电了，我后续能把baseline，数据集信息整理成一张图发给你吗？
+
+● 可以。图片能直接发，下次进来我会读。
+
+  准备：
+  - 把图保存到 F:\paperwritting\paper\ 下（任何文件名，PNG/JPG/PDF 都行）
+  - 下次 cd F:/paperwritting/paper → claude → /paper-writing，然后告诉我图片路径
+  - 或者直接把图拖进对话（如果支持）
+
+  快速恢复路径（截图存着，下次照做）：
+  cd F:/paperwritting/paper
+  claude
+  /paper-writing
+  [贴 baseline/数据集图]
+
+  快去找电源吧 👍
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  接下来一次性配置 VSCode：
+
+  1. 没装 VSCode → 去 https://code.visualstudio.com/ 装（默认 Next 即可）
+  2. 用 VSCode 打开 F:\paperwritting\paper\ 整个文件夹（File → Open Folder）
+  3. 第一次打开会右下角弹窗 "There is an available extension for this folder (LaTeX Workshop)" → 点 Install
+    - 没弹窗就左侧 Extensions 面板 → 搜 latex workshop → 装
+
+  以后工作流：
+
+  ┌─────────────────────────────────┬─────────────────────────────────────────────────────────┐
+  │              操作               │                         快捷键                          │
+  ├─────────────────────────────────┼─────────────────────────────────────────────────────────┤
+  │ 编辑 .tex 后自动重编 + 看新 PDF │ Ctrl+S                                                  │
+  ├─────────────────────────────────┼─────────────────────────────────────────────────────────┤
+  │ 强制重编（重置缓存）            │ Ctrl+Alt+B 选 pdflatex -> bibtex -> pdflatex x 2        │
+  ├─────────────────────────────────┼─────────────────────────────────────────────────────────┤
+  │ .tex 行跳转 PDF 对应位置        │ Ctrl+Alt+J 输入行号                                     │
+  ├─────────────────────────────────┼─────────────────────────────────────────────────────────┤
+  │ Ctrl+点击 PDF                   │ 反向跳回 .tex                                           │
+  ├─────────────────────────────────┼─────────────────────────────────────────────────────────┤
+  │ 关 PDF tab                      │ Ctrl+W 单独关                                           │
+  ├─────────────────────────────────┼─────────────────────────────────────────────────────────┤
+  │ 临时清 build/                   │ Ctrl+Shift+P → LaTeX Workshop: Clean up auxiliary files │
+  └─────────────────────────────────┴─────────────────────────────────────────────────────────┘
+
+  关键效果：
+
+  - 编译产物全部进 F:\paperwritting\paper\build\，主目录保持只有源文件（你已经清理过，VSCode 不会再搞乱）
+  - 报错时左侧行号旁边有红 X，点击跳转到出错行
+  - PDF 实时在右 tab 刷新，所见即所得
+
+  首次使用提示： 第一次 Ctrl+S 会让 LaTeX Workshop 跑完整 4 遍 recipe（pdflatex → bibtex → pdflatex × 2），大约 5-10
+  秒。之后热重编更快。
+
+  可以正常写论文了。改完任何 .tex / .bib 直接保存，右边 PDF 自动更新。
+
+
+
+以后要让 PDF 自动更新，存完 .tex 文件后按 Ctrl+Alt+B 手动触发编译，或者在 VSCode 左侧 TEX 面板点 "Build LaTeX project"。LaTeX Workshop 的自动保存编译有时候不灵敏，手动最稳。
+
+
+
+
+
+
