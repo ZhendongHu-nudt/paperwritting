@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./setup *)"
+      "Bash(./setup *)",
+      "Bash(python -c \"from PIL import Image; img = Image.open\\('f:/paperwritting/paper/figures/robustness.png'\\); print\\('Size:', img.size\\); print\\('Mode:', img.mode\\)\")"
     ]
   }
 }
