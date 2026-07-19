@@ -221,14 +221,10 @@ RAR (ours)          & 6.65 & 90.12 \\
 \subsection{Ablation Study}
 % Tests C2, C3, and C1 attribution. E8 reports the design knob (Q28).
 
-% Topic sentence 1: claim
-Each of RAR's three design choices contributes a measurable share of the overall gain; removing any one reopens part of the forgetting gap. We present the NUDT-Mobile results in the main text, and the same pattern holds across all six datasets.
-% TODO: Add an appendix reference here after inserting the six-dataset ablation table.
-
-Table~\ref{tab:ablation} reports component-level ablations on NUDT-Mobile. Removing the reconstruction routing signal raises forgetting by 5.78\,pp; reverting to a single head raises forgetting by 4.49\,pp and drops mix by 9.77\,pp; removing calibration raises forgetting by 3.41\,pp. These completed results quantify the effect of each component as implemented in the complete framework; the routing ablation removes both loss weighting and logit gating and therefore does not attribute the gain to either use in isolation. The constant-routing control retains both uses but replaces the per-flow score with $s_{\mathrm{old}}=s_{\mathrm{new}}=0.5$; its run is pending in this draft.
+We ablate RAR's three principal components and its use of soft routing. \emph{w/o flow-aware routing} removes the complete per-flow reconstruction-aware routing mechanism to measure its overall contribution. \emph{w/o dual-head} replaces the old/new paths with a single expanded classifier, and \emph{w/o calibration} omits post-training logit alignment. \emph{hard routing} retains the reconstructor, dual paths, objectives, and calibration, but replaces the continuous scores with $s_{\mathrm{old}}(x)=\mathbf{1}\{e(x)\leq\theta\}$ and $s_{\mathrm{new}}(x)=1-s_{\mathrm{old}}(x)$ for binary loss weighting and single-path inference. It isolates the benefit of continuous weighting from that of flow-level old/new decisions.
 
 \begin{table}[t]
-\caption{Ablation results on NUDT-Mobile; \emph{TBD} marks runs in progress.}
+\caption{Ablation results on NUDT-Mobile.}
 \label{tab:ablation}
 \centering
 \small
@@ -236,15 +232,17 @@ Table~\ref{tab:ablation} reports component-level ablations on NUDT-Mobile. Remov
 \toprule
 Variant & Forgetting (\%) & Mix (\%) \\
 \midrule
-w/o routing       & 12.43 & 87.29 \\
-constant routing  & \textit{TBD} & \textit{TBD} \\
+w/o flow-aware routing & 12.43 & 87.29 \\
 w/o dual-head     & 11.14 & 80.35 \\
 w/o calibration   & 10.06 & 87.82 \\
+hard routing      & 10.42 & 80.13 \\
 \midrule
 RAR (full)        & 6.65  & 90.12 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+Removing flow-aware routing nearly doubles forgetting, from 6.65\% to 12.43\%, demonstrating the overall effectiveness of per-flow reconstruction-aware adaptation. A single expanded head raises forgetting to 11.14\% and lowers mix from 90.12\% to 80.35\%, while removing calibration raises forgetting to 10.06\% and lowers mix to 87.82\%; these results support old/new path separation and logit alignment, respectively. Hard routing also degrades forgetting to 10.42\% and mix to 80.13\%. Its 9.99\,pp mix drop shows the cost of discarding one path after a binary decision, supporting continuous soft integration for flows near the reconstruction boundary.
 
 % E8 -- tau sensitivity (the Q28 design knob)
 \paragraph{Reconstruction temperature $\tau$ (design knob).}\label{sec:eval-ablation-tau}
