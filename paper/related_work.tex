@@ -25,10 +25,10 @@
 \subsection{Class-Incremental Learning}
 
 % Topic sentence: cluster and limit
-Classical CIL methods commonly combine distillation, calibration, and replay. Representative methods in these families generally use class-level or dataset-level balancing rather than an explicit input-dependent old/new routing score.
+Classical CIL methods commonly combine distillation, calibration, and replay. The representative methods considered here generally use class-level or dataset-level balancing rather than an input-dependent old/new routing score.
 
 % Distillation-based (LwF, iCaRL)
-Distillation-based methods (LwF~\cite{li2017lwf}, iCaRL~\cite{rebuffi2017icarl}) match the soft outputs of the old model on every sample with equal weight. The structural limitation is that the soft output carries class-boundary information from the old model and therefore biases the new model toward the old boundary regardless of whether the input is old or new.
+Distillation-based methods (LwF~\cite{li2017lwf}, iCaRL~\cite{rebuffi2017icarl}) match the soft outputs of the old model using a globally weighted objective. The structural limitation is that a fixed coefficient does not adapt the preservation pressure to each sample's compatibility with historical classes.
 
 % Calibration-based (BiC)
 Calibration-based methods such as BiC~\cite{wu2019bic} learn a linear correction for the new-class logits after incremental training. This correction is shared across inputs and therefore addresses systematic old/new bias rather than input-dependent routing.
@@ -38,6 +38,12 @@ Replay-based methods (DER~\cite{yan2021der}) store old samples or features and r
 
 % What RAR does
 RAR adds a per-sample old-versus-new score derived from reconstruction error. The score gates the two prediction paths and weights the distillation and margin losses, while replay supplies the old samples used to fit the reconstructor and train the incremental model.
+
+\subsection{Task Inference and Expert Routing}
+
+Input-dependent routing predates RAR. Expert Gate~\cite{aljundi2017expertgate} trains an autoencoder for each sequentially learned task and selects the expert whose autoencoder yields the lowest reconstruction error for a test sample. It establishes reconstruction error as a task-inference signal. A complementary line connects CIL to task prediction and OOD detection: CLOM~\cite{kim2022clom} trains task-specific OOD models, a theoretical analysis formalizes within-task and task-ID prediction as the two components of CIL~\cite{kim2022theoretical}, MORE~\cite{kim2022more} builds task-specific heads with OOD replay, and TPL~\cite{lin2024tpl} improves task prediction through likelihood ratios.
+
+RAR does not claim reconstruction-based task inference or multi-head CIL as new. It addresses encrypted-traffic CIL with a different integration: a single reconstructor fitted to replayed historical traffic produces a continuous old/new compatibility score; the score weights preservation and acquisition losses and softly gates two disjoint class groups; calibration then supports joint prediction over all seen traffic classes. The contribution is this reconstruction-conditioned training and inference framework, rather than any component in isolation.
 
 \subsection{Traffic Classification Backbones}
 

@@ -69,7 +69,7 @@ B & Replay + head expansion & AppScanner, ETC-PS, FlowLens,\\
 
 Five metrics isolate the quantity each claim depends on. \emph{old-before} measures accuracy on old classes after head expansion and \emph{before} training on the new step. \emph{old-after} measures accuracy on old classes after training on the new step. \emph{new-after-train} measures accuracy on the new classes after the new step. \emph{mix} reports combined accuracy on old plus new classes after the new step. \emph{forgetting} equals \emph{old-before} minus \emph{old-after} and isolates training-induced forgetting, so the head-expansion drop alone does not contribute.
 
-We report forgetting and mix as the headline pair: forgetting tests the contribution of C1 (sample-level knowledge ownership) directly, and mix captures the practical incremental accuracy that operators observe.
+We report forgetting and mix as the headline pair: forgetting measures old-class retention after incremental training, and mix captures the joint old/new accuracy that operators observe. Together they evaluate the two outcomes that reconstruction-conditioned balancing is designed to improve.
 
 All experiments share one training and evaluation pipeline. The encoder remains frozen. During an increment, the inherited old path and the fitted reconstructor are frozen; the adapter, new-class pathway, and calibration scalars are trainable. The calibration scalars are subsequently refined on a mixed validation set.
 
@@ -79,7 +79,7 @@ The main comparison uses a two-stage protocol: a base stage trains the initial h
 % §4.2 Group A -- RAR vs classical CIL strategies. Topic sentences + table + Takeaway.
 % -----------------------------------------------------------------
 \subsection{Comparison with CIL Strategies}
-% Tests C1: sample-level knowledge ownership estimation via reconstruction error.
+% Tests C1: reconstruction-aware old/new balancing.
 % Headline: forgetting cut by 35.5%--67.5% (vs Adapter, mean 47.8%); mix raised by up to 11.7 pp.
 
 % Topic sentence 1: claim
@@ -215,7 +215,7 @@ RAR (ours)          & 6.65 & 90.12 \\
 % Topic sentence 1: claim
 Each of RAR's three design choices contributes a measurable share of the overall gain; removing any one reopens part of the forgetting gap. We report all three ablations on NUDT-Mobile; the same pattern holds on the other five datasets, which we omit for brevity.
 
-Table~\ref{tab:ablation} reports three ablation experiments on NUDT-Mobile, each removing one design choice from the full RAR model. Removing the reconstruction routing signal (C1) raises forgetting by 5.78\,pp; reverting to a single head (C2) raises forgetting by 4.49\,pp and drops mix by 9.77\,pp; removing calibration (C3) raises forgetting by 3.41\,pp. Each component contributes on a different axis: routing and dual-head separation dominate forgetting reduction, while calibration provides the final mix accuracy.
+Table~\ref{tab:ablation} reports three component-level ablations on NUDT-Mobile. Removing the reconstruction routing signal raises forgetting by 5.78\,pp; reverting to a single head raises forgetting by 4.49\,pp and drops mix by 9.77\,pp; removing calibration raises forgetting by 3.41\,pp. These results quantify the effect of each component as implemented in the complete framework; the routing ablation removes both loss weighting and logit gating and therefore does not attribute the gain to either use in isolation.
 
 \begin{table}[t]
 \caption{Ablation results on NUDT-Mobile.}

@@ -23,7 +23,6 @@
 
 \section{Conclusion}\label{sec:conclusion}
 
-RAR transforms per-sample reconstruction errors into knowledge ownership probabilities, enabling adaptive soft routing between old and new classification heads. By introducing reconstruction-aware routing, dual-head decoupling, and logit calibration, RAR effectively mitigates knowledge interference in encrypted traffic class-incremental learning. Extensive experiments on six encrypted-traffic datasets demonstrate that RAR consistently reduces forgetting while improving mixed-class recognition performance over existing CIL baselines.
+RAR presents a reconstruction-conditioned CIL framework for encrypted-traffic classification. It transforms per-flow reconstruction errors into historical-class compatibility scores and uses the same signal for incremental loss weighting and calibrated soft routing between old- and new-class paths. The contribution lies in this traffic-specific integration for unified-label-space CIL rather than in reconstruction-based task inference itself. Experiments on six encrypted-traffic datasets show that RAR consistently reduces forgetting while improving mixed-class recognition performance over the evaluated classical CIL baselines.
 
 Although effective, RAR still relies on limited replay samples to characterize old knowledge and may face challenges when old and new classes exhibit highly similar representations. Future work will explore more adaptive knowledge routing mechanisms and integrate reconstruction-aware routing with incremental representation learning to further enhance continual traffic classification.
-

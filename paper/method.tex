@@ -6,7 +6,7 @@
 % Last updated: 2026-07-09
 %
 % Design spine (locked 2026-07-09):
-%   knowledge ownership estimation -> soft routing
+%   reconstruction-based old/new compatibility -> soft routing
 %   -> dual knowledge paths -> calibration.
 % Echoed in section opener and in each subsection.
 %
@@ -27,7 +27,7 @@
 % share the same thesis. We introduce the mechanism at the abstraction
 % level; implementation follows in the subsections.
 
-RAR's design follows a single line: knowledge ownership estimation, soft routing, dual knowledge paths, and calibration. A reconstruction autoencoder over frozen-encoder features produces a per-sample old-versus-new routing score. RAR uses that score to weight a frozen prediction path inherited from the preceding step and a trainable head for the arriving classes. Logit calibration then maps the two outputs into a single classification space. The rest of this section defines each component and the assumptions that bound the mechanism.
+RAR's design follows a single line: reconstruction-based old/new compatibility, soft routing, dual knowledge paths, and calibration. A reconstruction autoencoder over frozen-encoder features produces a per-sample old-versus-new routing score. RAR uses that score to weight a frozen prediction path inherited from the preceding step and a trainable head for the arriving classes. Logit calibration then maps the two outputs into a single classification space. The rest of this section defines each component and the assumptions that bound the mechanism.
 
 \begin{figure*}[t]
 \centering
@@ -45,19 +45,19 @@ RAR's design follows a single line: knowledge ownership estimation, soft routing
 Let $f: \mathcal{X} \to \mathbb{R}^d$ be a frozen encoder pre-trained on large-scale encrypted traffic data (ET-BERT~\cite{lin2022etbert}). At the base stage, we train a classifier $F_0$ on $K_0$ classes using $\mathcal{D}_0 = \{(x_i,y_i)\}_{i=1}^{N_0}$. At increment $t$, $K_t$ classes arrive with data $\mathcal{D}_t$, and a replay buffer $\mathcal{B}_{t-1}$ represents the classes seen before $t$. RAR freezes the complete preceding classifier $F_{t-1}$ as the old prediction path and learns a new-class head $h_t:\mathbb{R}^d\to\mathbb{R}^{K_t}$. For the single-increment setting, $F_{t-1}=F_0$ reduces to the frozen base classifier. Each sample is routed between $F_{t-1}$ and $h_t$ by a weight derived from reconstruction error. The following subsections define the reconstruction signal (\S\ref{sec:knowledge}), routing (\S\ref{sec:routing}), calibration (\S\ref{sec:calib}), and training procedure (\S\ref{sec:training}).
 
 % -----------------------------------------------------------------
-% 3.2 Knowledge ownership estimation
+% 3.2 Reconstruction-based old/new compatibility
 % -----------------------------------------------------------------
-\subsection{Knowledge Ownership Estimation}\label{sec:knowledge}
+\subsection{Reconstruction-Based Old/New Compatibility}\label{sec:knowledge}
 
 % Topic sentence 1: claim
-RAR represents each sample's location in the old-versus-new knowledge space by a scalar routing score derived from reconstruction error. This score is an operational routing weight, not a calibrated posterior probability.
+RAR measures each sample's compatibility with the replay-derived old-class manifold using a scalar routing score. This score is an operational weight, not a calibrated posterior probability or a claim that knowledge belongs exclusively to one path.
 
 % Topic sentence 2: mechanism
 We train a reconstruction autoencoder $g_\phi$ on frozen-encoder features of replayed old samples, so $g_\phi$ learns the manifold that the frozen encoder $f$ produces for old classes. The reconstruction error therefore tends to be small on old-class samples and large on new-class samples:
 \begin{equation}\label{eq:recon}
 e(x) = \frac{1}{d}\,\| g_\phi(f(x)) - f(x) \|_2^2.
 \end{equation}
-We compute the old 95th-percentile edge and new 5th-percentile edge on the replay and new reference sets, respectively, and set $\theta$ to their midpoint. The temperature $\tau$ is the pooled standard deviation of their errors, lower-bounded for numerical stability. We then convert the error to per-sample ownership scores:
+We compute the old 95th-percentile edge and new 5th-percentile edge on the replay and new reference sets, respectively, and set $\theta$ to their midpoint. The temperature $\tau$ is the pooled standard deviation of their errors, lower-bounded for numerical stability. We then convert the error to per-sample routing scores:
 \begin{align}
 s_{\mathrm{old}}(x) &= \sigma\!\left(\frac{\theta - e(x)}{\tau}\right),\label{eq:score-old}\\
 s_{\mathrm{new}}(x) &= 1 - s_{\mathrm{old}}(x),\label{eq:score-new}
@@ -65,7 +65,7 @@ s_{\mathrm{new}}(x) &= 1 - s_{\mathrm{old}}(x),\label{eq:score-new}
 where $\tau$ controls the sharpness of the sigmoid. The fitted threshold and temperature are fixed after the pre-training stage; only $e(x)$ is computed per input at inference.
 
 % Topic sentence 3: why reconstruction (design justification)
-The score does not require a class label at inference: it measures compatibility between $f(x)$ and the feature manifold learned by $g_\phi$. Its fitting stage does use the known old/new split between replay and newly arriving reference samples. This signal complements output-based distillation (LwF~\cite{li2017lwf}, iCaRL~\cite{rebuffi2017icarl}) and stored-example replay (DER~\cite{yan2021der}) by providing an input-dependent weight for balancing the two prediction paths.
+The score does not require a class label at inference: it measures compatibility between $f(x)$ and the feature manifold learned by $g_\phi$. Its fitting stage does use the known old/new split between replay and newly arriving reference samples. Reconstruction-based gating has previously been used to infer tasks and select experts~\cite{aljundi2017expertgate}; here, the score instead balances two class groups within a unified prediction space and weights the corresponding incremental-learning objectives. It complements output-based distillation (LwF~\cite{li2017lwf}, iCaRL~\cite{rebuffi2017icarl}) and stored-example replay (DER~\cite{yan2021der}).
 
 % Topic sentence 4: empirical foundation
 The empirical foundation for $s_{\mathrm{old}}$ is separability: across the six evaluated datasets, reconstruction error distinguishes old from new samples with mean AUC 0.894 (Figure~\ref{fig:e0-separability}). This result motivates evaluating the routing mechanism on the full benchmark; it does not imply perfect old/new identification.
@@ -98,7 +98,7 @@ RAR routes each input through two knowledge paths: the frozen preceding classifi
 In the first increment, the old path is the frozen base-stage classifier. In later increments, it is the complete recursively constructed RAR classifier from the preceding step and therefore covers all previously seen classes. The current new head is trained through a residual adapter and a LayerNorm+MLP pathway. The current encoder remains frozen.
 
 % Topic sentence 3: soft routing mechanism
-We apply the routing signal in log space. Let $\ell_{\mathrm{old}}(x) \in \mathbb{R}^{K_0}$ and $\ell_{\mathrm{new}}(x) \in \mathbb{R}^{K_{\mathrm{new}}}$ be the raw logit vectors from the two heads. The gated logits are computed by adding the log of each head's ownership score:
+We apply the routing signal in log space. Let $\ell_{\mathrm{old}}(x) \in \mathbb{R}^{K_0}$ and $\ell_{\mathrm{new}}(x) \in \mathbb{R}^{K_{\mathrm{new}}}$ be the raw logit vectors from the two heads. The gated logits are computed by adding the log of each head's routing score:
 \begin{align}
 \tilde{\ell}_{\mathrm{old}}(x) &= \ell_{\mathrm{old}}(x) + \log s_{\mathrm{old}}(x),\label{eq:routing-old}\\
 \tilde{\ell}_{\mathrm{new}}(x) &= \ell_{\mathrm{new}}(x) + \log s_{\mathrm{new}}(x).\label{eq:routing-new}
@@ -177,7 +177,7 @@ Algorithm~\ref{alg:rar} summarizes the full training and inference procedure.
   \Indp
   $e(x) = \frac{1}{d}\,\|g_\phi(z)-z\|_2^2$\;
   \Indm
-  \textbf{Ownership score}\;
+  \textbf{Old/new routing score}\;
   \Indp
   $s_{\mathrm{old}}
   = \sigma\!\left(\frac{\theta-e(x)}{\tau}\right)$\;
@@ -236,8 +236,8 @@ The temperature $\tau$ trades routing determinism against path fusion. In the im
 
 RAR is designed under two key assumptions that define its applicability.
 
-First, replay memory should provide representative coverage of previously learned knowledge. If replay samples fail to capture the old-class distribution, the reconstructor may learn an incomplete representation of old knowledge, leading to inaccurate ownership estimation. \S\ref{sec:eval-buffer} evaluates different replay buffer sizes and shows that RAR remains robust even under a memory ratio of 0.005.
+First, replay memory should provide representative coverage of previously learned knowledge. If replay samples fail to capture the old-class distribution, the reconstructor may learn an incomplete representation of old knowledge, leading to inaccurate routing scores. \S\ref{sec:eval-buffer} evaluates different replay buffer sizes and shows that RAR remains robust even under a memory ratio of 0.005.
 
-Second, reconstruction error should exhibit sufficient separability between old and emerging knowledge. When old and new classes have highly similar feature representations, reconstruction errors may overlap, reducing the reliability of knowledge ownership estimation. Figure~\ref{fig:e0-separability} shows the observed separation across the six evaluated datasets.
+Second, reconstruction error should exhibit sufficient separability between old and emerging knowledge. When old and new classes have highly similar feature representations, reconstruction errors may overlap, reducing the reliability of the compatibility score. Figure~\ref{fig:e0-separability} shows the observed separation across the six evaluated datasets.
 
 These assumptions characterize the applicability of RAR rather than strict limitations. RAR is most effective when replay samples preserve representative old knowledge and when old and emerging knowledge exhibit distinguishable representation patterns.

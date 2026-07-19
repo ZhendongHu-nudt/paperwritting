@@ -39,7 +39,7 @@ At the incremental step $T_i$ the classifier must satisfy two competing objectiv
 \end{figure*}
 
 % Topic sentence 3: encrypted-traffic specifics
-Encrypted-traffic classification adds three domain-specific pressures on top of generic CIL. Packet payloads are encrypted and uninformative; the classifier must rely on packet length, timing, direction, and TLS handshake features. Class boundaries shift as new applications launch and new malware families appear. And the deployed classifier must run online under tight latency budgets, so retraining on the full history on every addition is rarely practical.
+Encrypted-traffic classification adds three domain-specific pressures on top of generic CIL. Packet payloads are encrypted and uninformative; the classifier must rely on packet length, timing, direction, and TLS handshake features. Class boundaries shift as new applications and services appear and protocol behaviors evolve. And the deployed classifier must run online under tight latency budgets, so retraining on the full history on every addition is rarely practical.
 
 \subsection{The ET-BERT Backbone}
 
@@ -48,7 +48,7 @@ RAR adopts ET-BERT~\cite{lin2022etbert} as its frozen encoder. ET-BERT is a Tran
 \subsection{Three Structural Gaps}
 
 % Topic sentence 1: claim
-Three structural gaps in prior CIL methods explain why forgetting persists on encrypted-traffic classification; closing any one of them in isolation is insufficient.
+Three structural gaps in the classical CIL families evaluated in this paper help explain why forgetting persists on encrypted-traffic classification; closing any one of them in isolation is insufficient.
 
 % Gap 1: shared classifier competition
 \paragraph{Shared classifier competition.}
