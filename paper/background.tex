@@ -56,7 +56,7 @@ Expanding the classification head to accommodate new classes forces old and new 
 
 % Gap 2: knowledge-unaware distillation
 \paragraph{Knowledge-unaware distillation.}
-Distillation-based CIL methods (LwF~\cite{li2017lwf}, iCaRL~\cite{rebuffi2017icarl}) apply the same distillation loss to every sample, regardless of whether the sample carries old or new knowledge. The uniform signal cannot tell a sample that is close to the old-knowledge manifold from one that is far from it; both contribute the same gradient to the new model. Distillation alone therefore preserves the average old-knowledge behavior but loses the per-sample distinction that incremental classification needs.
+Distillation-based CIL methods (LwF~\cite{li2017lwf}, iCaRL~\cite{rebuffi2017icarl}) use a globally weighted preservation objective. The fixed weight cannot adapt to how compatible each flow is with previously learned class representations: flows close to and far from the historical-class manifold are regulated in the same way. Distillation can therefore preserve average historical behavior while overlooking flow-level differences in the required stability--plasticity balance.
 
 % Gap 3: limited replay representation
 \paragraph{Limited replay representation.}

@@ -9,8 +9,8 @@
 %   - KDD venue: integrated related work, colon-style subtitles, no \smartparagraph.
 %   - Headings are claims. Topic sentences assert claims.
 %   - Every subsection ends with a "Takeaway." paragraph.
-%   - All numbers are [TBD] until the user sends organized results.
-%   - Citation keys are placeholders; map to .bib entries on integration.
+%   - Main tables have been populated from the organized results.
+%   - Reference metadata remains to be finalized before submission.
 %   - Mechanism: SOFT routing via reconstruction-temperature-weighted dual heads.
 %     Do not describe RAR as assigning each sample to a single head.
 % =============================================================
@@ -47,7 +47,7 @@ EBSNN-WebApp     & Web app        & Yes & 48 & 15336 \\
 \end{tabular}
 \end{table}
 
-We compare RAR against two baseline groups. \emph{Group A} holds the encoder fixed at ET-BERT~\cite{lin2022etbert} and varies the CIL strategy: Learning without Forgetting (LwF)~\cite{li2017lwf}, iCaRL~\cite{rebuffi2017icarl}, BiC~\cite{wu2019bic}, DER~\cite{yan2021der}, Adapter~\cite{houlsby2019adapter}, and Fine-tune. \emph{Group B} holds the naive CIL setup fixed and varies the traffic-classification backbone across nine models: AppScanner, ETC-PS, FlowLens, CNN-based, CNN-emb, EBSNN, FS-Net, GraphDApp, and MM4flow. RAR with ET-BERT is included as a reference rather than counted as a tenth backbone baseline. Group~A compares routing with classical CIL strategies on a fixed encoder; Group~B tests whether naive incremental forgetting persists across encoder choices.
+We compare RAR against two baseline groups. \emph{Group A} holds the encoder fixed at ET-BERT~\cite{lin2022etbert} and varies the CIL strategy: Learning without Forgetting (LwF)~\cite{li2017lwf}, iCaRL~\cite{rebuffi2017icarl}, BiC~\cite{wu2019bic}, DER~\cite{yan2021der}, Adapter~\cite{houlsby2019adapter}, Fine-tune, and an ET-BERT adaptation of MORE~\cite{kim2022more}. \emph{Group B} holds the naive CIL setup fixed and varies the traffic-classification backbone across nine models: AppScanner, ETC-PS, FlowLens, CNN-based, CNN-emb, EBSNN, FS-Net, GraphDApp, and MM4flow. RAR with ET-BERT is included as a reference rather than counted as a tenth backbone baseline. Group~A compares routing with both classical CIL strategies and a closely related OOD-replay multi-head method on a fixed encoder; Group~B tests whether naive incremental forgetting persists across encoder choices.
 
 \begin{table}[t]
 \caption{Baseline groups.}
@@ -59,7 +59,7 @@ We compare RAR against two baseline groups. \emph{Group A} holds the encoder fix
 Group & Variable held fixed & Baselines \\
 \midrule
 A & ET-BERT encoder & LwF, iCaRL, BiC, DER, Adapter,\\
-  &                   & Fine-tune \\
+  &                   & Fine-tune, MORE-ETBERT \\
 B & Replay + head expansion & AppScanner, ETC-PS, FlowLens,\\
   &                        & CNN-based, CNN-emb, EBSNN,\\
   &                        & FS-Net, GraphDApp, MM4flow \\
@@ -73,6 +73,8 @@ We report forgetting and mix as the headline pair: forgetting measures old-class
 
 All experiments share one training and evaluation pipeline. The encoder remains frozen. During an increment, the inherited old path and the fitted reconstructor are frozen; the adapter, new-class pathway, and calibration scalars are trainable. The calibration scalars are subsequently refined on a mixed validation set.
 
+Before incremental training, we repartition the provided new-class evaluation split using a fixed random seed (42), reserving 10\% for validation and the remaining 90\% for held-out testing. The validation and held-out test subsets are disjoint, and the old-class test split is evaluated independently.
+
 The main comparison uses a two-stage protocol: a base stage trains the initial head on the first half of classes, and one incremental stage learns the remaining classes with a fixed replay buffer. Section~\ref{sec:eval-buffer} additionally evaluates the recursive five-increment protocol defined in Section~\ref{sec:multistep}.
 
 % -----------------------------------------------------------------
@@ -83,20 +85,20 @@ The main comparison uses a two-stage protocol: a base stage trains the initial h
 % Headline: forgetting cut by 35.5%--67.5% (vs Adapter, mean 47.8%); mix raised by up to 11.7 pp.
 
 % Topic sentence 1: claim
-Against classical CIL strategies on a fixed ET-BERT encoder, RAR cuts forgetting by an average of 47.8\% (range 35.5\%--67.5\%) across six datasets and raises mixed-class accuracy by up to 11.7 percentage points over the strongest CIL baseline (Adapter).
+Against classical CIL strategies on a fixed ET-BERT encoder, RAR cuts forgetting by an average of 47.8\% (range 35.5\%--67.5\%) across six datasets and raises mixed-class accuracy by up to 11.7 percentage points over the strongest evaluated baseline (Adapter).
 
 % Topic sentence 2: pattern
 Replay-based methods (DER, iCaRL) outperform uniform distillation (LwF) under encrypted traffic, yet both still forget more than RAR on every dataset.
 
-% Topic sentence 3: lower bound and upper bound framing
-Fine-tune, which omits all anti-forgetting mechanisms, sets the lower bound. RAR reduces forgetting by 35.5\%--67.5\% over the strongest CIL baseline (Adapter) on every dataset.
+% Topic sentence 3: fine-tuning reference
+Fine-tune, which omits all anti-forgetting mechanisms, provides a naive incremental reference. RAR reduces forgetting by 35.5\%--67.5\% relative to the strongest evaluated baseline (Adapter) on every dataset.
 
 % Topic sentence 4: pattern citation (Principle 14)
-The consistent gains are compatible with the intended effect of reconstruction-error routing: weighting preservation and acquisition signals by sample rather than applying a uniform balance.
+The consistent gains are compatible with the intended effect of reconstruction-error routing: adapting preservation and acquisition signals to each flow rather than applying a uniform balance.
 
 % Topic sentence 5: figure/table reference
 \begin{table*}[t]
-\caption{Forgetting ($F\!\downarrow$, lower is better) and mixed-class accuracy ($M\!\uparrow$, higher is better). Mean over 3 seeds.}
+\caption{Forgetting ($F\!\downarrow$, lower is better) and mixed-class accuracy ($M\!\uparrow$, higher is better). Mean over 3 seeds; \emph{TBD} marks runs in progress.}
 \label{tab:eval-a}
 \centering
 \small
@@ -149,6 +151,13 @@ iCaRL~\cite{rebuffi2017icarl} & 25.15 & 81.66 & 33.87 & 73.25 & 12.39 & 79.47 & 
 BiC~\cite{wu2019bic} & 24.78 & 79.48 & 33.87 & 73.25 & 11.68 & 80.09 & 28.94 & 80.65 & 84.87 & 42.21 & 38.15 & 73.61 \\
 DER~\cite{yan2021der} & 12.64 & 86.15 & 33.92 & 73.19 & 11.33 & 79.37 & 16.85 & 85.11 & 77.28 & 46.83 & 17.89 & 84.78 \\
 Adapter~\cite{houlsby2019adapter} & 12.79 & 86.86 & 33.86 & 73.26 & 9.22 & 82.12 & 16.40 & 87.20 & 13.11 & 89.16 & 13.98 & 88.69 \\
+MORE-ETBERT~\cite{kim2022more}
+& \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} \\
 
 \midrule
 
@@ -174,10 +183,10 @@ RAR (ours)
 On NUDT-Mobile, naive incremental training forgets across all nine traffic-classification backbones, which isolates the forgetting problem from the encoder choice.
 
 % Topic sentence 2: pattern
-Backbones with stronger pre-trained representations reach higher accuracy, yet forgetting spans 13.3\%--58.4\% across the nine naive backbones. Even the strongest (GraphDApp, 13.3\%) forgets more than twice RAR's 6.65\%.
+Forgetting spans 13.3\%--58.4\% across the nine naive backbones despite their different representation architectures. Even the lowest-forgetting naive backbone (GraphDApp, 13.3\%) forgets more than twice as much as RAR's 6.65\% under the evaluated setup.
 
 % Topic sentence 3: implication for encoder choice
-A stronger encoder does not buy back the old-class accuracy that head expansion costs. RAR alone drops forgetting below the naive floor (6.65\% vs 13.3\% for the strongest naive backbone, GraphDApp); routing is the operation that recovers it.
+Changing the encoder alone does not eliminate the old-class accuracy loss under naive incremental training. RAR yields lower forgetting than every naive-backbone configuration in this study (6.65\% vs 13.3\% for the lowest-forgetting configuration, GraphDApp).
 
 % Topic sentence 4: figure/table reference
 Table~\ref{tab:eval-b-forgetting} reports the naive-incremental forgetting rate and mix accuracy for each of the nine backbones on NUDT-Mobile, with RAR shown for contrast.
@@ -213,12 +222,13 @@ RAR (ours)          & 6.65 & 90.12 \\
 % Tests C2, C3, and C1 attribution. E8 reports the design knob (Q28).
 
 % Topic sentence 1: claim
-Each of RAR's three design choices contributes a measurable share of the overall gain; removing any one reopens part of the forgetting gap. We report all three ablations on NUDT-Mobile; the same pattern holds on the other five datasets, which we omit for brevity.
+Each of RAR's three design choices contributes a measurable share of the overall gain; removing any one reopens part of the forgetting gap. We present the NUDT-Mobile results in the main text, and the same pattern holds across all six datasets.
+% TODO: Add an appendix reference here after inserting the six-dataset ablation table.
 
-Table~\ref{tab:ablation} reports three component-level ablations on NUDT-Mobile. Removing the reconstruction routing signal raises forgetting by 5.78\,pp; reverting to a single head raises forgetting by 4.49\,pp and drops mix by 9.77\,pp; removing calibration raises forgetting by 3.41\,pp. These results quantify the effect of each component as implemented in the complete framework; the routing ablation removes both loss weighting and logit gating and therefore does not attribute the gain to either use in isolation.
+Table~\ref{tab:ablation} reports component-level ablations on NUDT-Mobile. Removing the reconstruction routing signal raises forgetting by 5.78\,pp; reverting to a single head raises forgetting by 4.49\,pp and drops mix by 9.77\,pp; removing calibration raises forgetting by 3.41\,pp. These completed results quantify the effect of each component as implemented in the complete framework; the routing ablation removes both loss weighting and logit gating and therefore does not attribute the gain to either use in isolation. The constant-routing control retains both uses but replaces the per-flow score with $s_{\mathrm{old}}=s_{\mathrm{new}}=0.5$; its run is pending in this draft.
 
 \begin{table}[t]
-\caption{Ablation results on NUDT-Mobile.}
+\caption{Ablation results on NUDT-Mobile; \emph{TBD} marks runs in progress.}
 \label{tab:ablation}
 \centering
 \small
@@ -227,6 +237,7 @@ Table~\ref{tab:ablation} reports three component-level ablations on NUDT-Mobile.
 Variant & Forgetting (\%) & Mix (\%) \\
 \midrule
 w/o routing       & 12.43 & 87.29 \\
+constant routing  & \textit{TBD} & \textit{TBD} \\
 w/o dual-head     & 11.14 & 80.35 \\
 w/o calibration   & 10.06 & 87.82 \\
 \midrule
@@ -251,17 +262,18 @@ Figure~\ref{fig:tau-sensitivity} reports forgetting and mix on CSTNET-TLS1.3 as 
 % §4.5 Robustness
 % -----------------------------------------------------------------
 \subsection{Robustness}\label{sec:eval-buffer}
-% OMIT THIS SUBSECTION ENTIRELY IF E6/E7 ARE NOT RUN BY 2026-07-15.
 % T = 5 steps. Buffer sweep = {5, 10, 20, 50} per class. CSTNET-TLS1.3.
 
 % Topic sentence 1: claim
-Over $T$ incremental steps and a range of replay-buffer sizes, RAR maintains its lead over Adapter, the strongest CIL baseline.
+Over $T$ incremental steps and a range of replay-buffer sizes, RAR maintains its lead over Adapter, the strongest evaluated classical CIL baseline overall.
+
+We select Adapter for these robustness experiments because it provides the strongest overall performance among the evaluated classical CIL baselines in Table~\ref{tab:eval-a}, while allowing the same frozen ET-BERT encoder, data splits, replay protocol, and memory budgets as RAR. This controlled comparison tests whether RAR's advantage persists across incremental steps and constrained replay budgets; the broader method comparison remains in Table~\ref{tab:eval-a}.
 
 % Topic sentence 2: per-step pattern
 We split the 40 new classes of CSTNET-TLS1.3 into $T=5$ steps of 8 classes each. Fine-tune collapses from 75.6\% to 22.0\% mix accuracy after five steps. Adapter degrades from 91.3\% to 74.8\%. RAR drops only from 93.4\% to 84.6\%, widening its lead over Adapter from 2.1\,pp at $T{=}1$ to 9.8\,pp at $T{=}5$.
 
 % Topic sentence 3: buffer pattern
-RAR's forgetting rate rises from 5.98\% to 11.82\% as the memory ratio drops from 0.05 to 0.005. Adapter degrades from 7.97\% to 22.70\% over the same range. At the smallest buffer, RAR's forgetting (11.82\% at ratio 0.005) is comparable to Adapter's 11.70\% at four times the memory ratio (0.02).
+Across all evaluated memory ratios, RAR exhibits lower forgetting than Adapter. At the smallest ratio of 0.005, RAR records 11.82\% forgetting, compared with 22.70\% for Adapter. Increasing the ratio to 0.05 reduces the endpoint values to 5.98\% and 7.97\%, respectively, although the intermediate RAR results are not strictly monotonic. Notably, RAR at ratio 0.005 achieves forgetting comparable to Adapter at a four-times-larger ratio of 0.02 (11.82\% versus 11.70\%).
 
 % Topic sentence 4: figure/table reference
 Figure~\ref{fig:robustness} reports the per-step accuracy and buffer sensitivity on CSTNET-TLS1.3.
@@ -271,5 +283,5 @@ Figure~\ref{fig:robustness} reports the per-step accuracy and buffer sensitivity
 \includegraphics[width=\linewidth]{figures/robustness.pdf}
 \caption{Robustness on CSTNET-TLS1.3: (a) per-step mix accuracy over $T=5$ steps, and (b) forgetting as a function of memory ratio.}
 \label{fig:robustness}
-\Description{Two-panel figure. Left: line plot of per-step mix accuracy on CSTNET-TLS1.3 over five incremental steps with RAR, Adapter, and Fine-tune. Right: line plot of forgetting rate against memory ratio for RAR and Adapter. RAR remains stable in both dimensions.}
+\Description{Two-panel figure. Left: line plot of per-step mix accuracy on CSTNET-TLS1.3 over five incremental steps with RAR, Adapter, and Fine-tune. Right: line plot of forgetting rate against memory ratio for RAR and Adapter. RAR has higher per-step mix accuracy and lower forgetting at every evaluated memory ratio.}
 \end{figure}

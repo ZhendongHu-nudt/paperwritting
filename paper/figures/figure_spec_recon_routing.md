@@ -1,7 +1,7 @@
 # Figure: Reconstruction Routing Mechanism (detail)
 
 **Label:** `fig:recon-routing`
-**Used in:** §3.1 Knowledge ownership estimation
+**Used in:** Per-Flow Reconstruction Compatibility
 **Archetype:** component_detail
 **Backend:** TikZ
 **Standalone layout:** full-width single column (`\linewidth`)

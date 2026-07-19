@@ -43,8 +43,8 @@ component in the figure and locate the subsection of §3 that defines it.
 
 ## Caption contract
 
-The caption must state that $p_{\mathrm{old}}(x)$ is the per-sample
-old/new probability, that soft routing keeps both heads active, and that
+The caption must state that $s_{\mathrm{old}}(x)$ is an operational
+per-flow compatibility score, that soft routing keeps both heads active, and that
 calibration unifies logits across disjoint class subsets.
 
 ## Color usage

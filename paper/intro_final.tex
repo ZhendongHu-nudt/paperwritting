@@ -7,7 +7,7 @@
 %
 % Differs from intro_draft0.tex in:
 %   - Key Abstraction now opens with the coined term "knowledge
-%     ownership estimation" rather than introducing it tentatively.
+%     per-flow historical compatibility.
 %   - Contributions are claim-first with embedded headline numbers.
 %   - Results Preview anchors the closing with the locked headline.
 %   - Outline paragraph added at the end.
@@ -29,7 +29,7 @@ Class-incremental learning (CIL) targets this need by adding classes without ret
 
 % Key Abstraction: the coined term appears prominently. Per
 % rhetorical_moves.md, this move appears ONLY in final versions and is
-% framed as compatibility rather than an exclusive ownership claim.
+% framed as compatibility rather than an exclusive assignment claim.
 We observe that an autoencoder fitted to frozen features of replayed old samples tends to reconstruct old-class samples with lower error than new-class samples. In encrypted-traffic representations, reconstruction error therefore provides a per-flow score of compatibility with the replay-derived historical-class manifold. Reconstruction-based task gates have used related signals to select task-specific experts~\cite{aljundi2017expertgate}, while OOD-based CIL methods infer a task before applying a corresponding classifier~\cite{kim2022clom,kim2022theoretical,kim2022more,lin2024tpl}. RAR instead uses compatibility as a continuous control signal for balancing old and new traffic classes within one prediction space.
 
 % Design Intuition: one-paragraph mental model. The design spine

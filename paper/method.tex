@@ -6,8 +6,8 @@
 % Last updated: 2026-07-09
 %
 % Design spine (locked 2026-07-09):
-%   reconstruction-based old/new compatibility -> soft routing
-%   -> dual knowledge paths -> calibration.
+%   per-flow historical compatibility -> soft routing
+%   -> dual class paths -> calibration.
 % Echoed in section opener and in each subsection.
 %
 % Conventions:
@@ -27,14 +27,14 @@
 % share the same thesis. We introduce the mechanism at the abstraction
 % level; implementation follows in the subsections.
 
-RAR's design follows a single line: reconstruction-based old/new compatibility, soft routing, dual knowledge paths, and calibration. A reconstruction autoencoder over frozen-encoder features produces a per-sample old-versus-new routing score. RAR uses that score to weight a frozen prediction path inherited from the preceding step and a trainable head for the arriving classes. Logit calibration then maps the two outputs into a single classification space. The rest of this section defines each component and the assumptions that bound the mechanism.
+RAR's design follows a single line: per-flow historical compatibility, reconstruction-aware soft routing, dual class paths, and calibration. A reconstruction autoencoder over frozen traffic representations produces an old/new compatibility score for each flow. The same score weights the incremental objectives during training and integrates a frozen historical-class path with a trainable new-class path during inference. Logit calibration then maps the two outputs into a unified traffic-class space. The rest of this section defines each component and the assumptions that bound the mechanism.
 
 \begin{figure*}[t]
 \centering
 \input{figures/fig_rar_architecture}
 \caption{RAR architecture overview.}
 \label{fig:rar-architecture}
-\Description{Architecture diagram of RAR. Input flows through a frozen ET-BERT encoder into feature vector f(x). Three parallel branches: a frozen old-knowledge classification head, a trained new-knowledge head with adapter, and a reconstruction autoencoder branch that maps error through sigmoid into routing scores. Log-space gating combines the two head outputs, followed by scalar calibration into joint logits.}
+\Description{Architecture diagram of RAR. Each flow passes through a frozen ET-BERT encoder into feature vector f(x). Three parallel branches contain a frozen old-class path, a trainable new-class path with an adapter, and a reconstruction autoencoder that maps error through a sigmoid into routing scores. Log-space gating combines the two class-path outputs, followed by scalar calibration into joint logits.}
 \end{figure*}
 
 % -----------------------------------------------------------------
@@ -42,22 +42,22 @@ RAR's design follows a single line: reconstruction-based old/new compatibility, 
 % -----------------------------------------------------------------
 \subsection{Problem Formulation}
 
-Let $f: \mathcal{X} \to \mathbb{R}^d$ be a frozen encoder pre-trained on large-scale encrypted traffic data (ET-BERT~\cite{lin2022etbert}). At the base stage, we train a classifier $F_0$ on $K_0$ classes using $\mathcal{D}_0 = \{(x_i,y_i)\}_{i=1}^{N_0}$. At increment $t$, $K_t$ classes arrive with data $\mathcal{D}_t$, and a replay buffer $\mathcal{B}_{t-1}$ represents the classes seen before $t$. RAR freezes the complete preceding classifier $F_{t-1}$ as the old prediction path and learns a new-class head $h_t:\mathbb{R}^d\to\mathbb{R}^{K_t}$. For the single-increment setting, $F_{t-1}=F_0$ reduces to the frozen base classifier. Each sample is routed between $F_{t-1}$ and $h_t$ by a weight derived from reconstruction error. The following subsections define the reconstruction signal (\S\ref{sec:knowledge}), routing (\S\ref{sec:routing}), calibration (\S\ref{sec:calib}), and training procedure (\S\ref{sec:training}).
+Let $f: \mathcal{X} \to \mathbb{R}^d$ be a frozen encoder pre-trained on large-scale encrypted traffic data (ET-BERT~\cite{lin2022etbert}). At the base stage, we train a classifier $F_0$ on $K_0$ classes using $\mathcal{D}_0 = \{(x_i,y_i)\}_{i=1}^{N_0}$. At increment $t$, $K_t$ classes arrive with data $\mathcal{D}_t$, and a replay buffer $\mathcal{B}_{t-1}$ represents the classes seen before $t$. Let $K_{<t}=\sum_{j=0}^{t-1}K_j$ denote the number of previously learned classes. RAR freezes the complete preceding classifier $F_{t-1}$ as the old prediction path and learns a new-class head $h_t:\mathbb{R}^d\to\mathbb{R}^{K_t}$. For the single-increment setting, $F_{t-1}=F_0$ reduces to the frozen base classifier. Each flow is routed between $F_{t-1}$ and $h_t$ by a weight derived from reconstruction error. The following subsections define the reconstruction signal (\S\ref{sec:knowledge}), routing (\S\ref{sec:routing}), calibration (\S\ref{sec:calib}), and training procedure (\S\ref{sec:training}).
 
 % -----------------------------------------------------------------
-% 3.2 Reconstruction-based old/new compatibility
+% 3.2 Per-flow reconstruction compatibility
 % -----------------------------------------------------------------
-\subsection{Reconstruction-Based Old/New Compatibility}\label{sec:knowledge}
+\subsection{Per-Flow Reconstruction Compatibility}\label{sec:knowledge}
 
 % Topic sentence 1: claim
-RAR measures each sample's compatibility with the replay-derived old-class manifold using a scalar routing score. This score is an operational weight, not a calibrated posterior probability or a claim that knowledge belongs exclusively to one path.
+RAR measures each flow's compatibility with the replay-derived historical-class manifold using a scalar routing score. This score is an operational weight, not a calibrated posterior probability or a hard assignment to one class group.
 
 % Topic sentence 2: mechanism
 We train a reconstruction autoencoder $g_\phi$ on frozen-encoder features of replayed old samples, so $g_\phi$ learns the manifold that the frozen encoder $f$ produces for old classes. The reconstruction error therefore tends to be small on old-class samples and large on new-class samples:
 \begin{equation}\label{eq:recon}
 e(x) = \frac{1}{d}\,\| g_\phi(f(x)) - f(x) \|_2^2.
 \end{equation}
-We compute the old 95th-percentile edge and new 5th-percentile edge on the replay and new reference sets, respectively, and set $\theta$ to their midpoint. The temperature $\tau$ is the pooled standard deviation of their errors, lower-bounded for numerical stability. We then convert the error to per-sample routing scores:
+We compute the old 95th-percentile edge and new 5th-percentile edge on the replay and new reference sets, respectively, and set $\theta$ to their midpoint. The temperature $\tau$ is the pooled standard deviation of their errors, lower-bounded for numerical stability. We then convert the error to per-flow routing scores:
 \begin{align}
 s_{\mathrm{old}}(x) &= \sigma\!\left(\frac{\theta - e(x)}{\tau}\right),\label{eq:score-old}\\
 s_{\mathrm{new}}(x) &= 1 - s_{\mathrm{old}}(x),\label{eq:score-new}
@@ -87,27 +87,27 @@ The empirical foundation for $s_{\mathrm{old}}$ is separability: across the six 
 \end{figure}
 
 % -----------------------------------------------------------------
-% 3.2 Soft routing and dual knowledge paths 
+% 3.3 Soft routing and dual class paths
 % -----------------------------------------------------------------
-\subsection{Soft Routing and Dual Knowledge Paths}\label{sec:routing}
+\subsection{Soft Routing and Dual Class Paths}\label{sec:routing}
 
 % Topic sentence 1: claim
-RAR routes each input through two knowledge paths: the frozen preceding classifier $F_{t-1}$ and a trainable new-class head $h_t$ equipped with a lightweight adapter. Their outputs are weighted by $s_{\mathrm{old}}(x)$ and $s_{\mathrm{new}}(x)$ from Eqs.~\eqref{eq:score-old}--\eqref{eq:score-new}.
+RAR routes each flow through two class paths: the frozen preceding classifier $F_{t-1}$ and a trainable new-class head $h_t$ equipped with a lightweight adapter. Their outputs are weighted by $s_{\mathrm{old}}(x)$ and $s_{\mathrm{new}}(x)$ from Eqs.~\eqref{eq:score-old}--\eqref{eq:score-new}.
 
 % Topic sentence 2: what each head does
 In the first increment, the old path is the frozen base-stage classifier. In later increments, it is the complete recursively constructed RAR classifier from the preceding step and therefore covers all previously seen classes. The current new head is trained through a residual adapter and a LayerNorm+MLP pathway. The current encoder remains frozen.
 
 % Topic sentence 3: soft routing mechanism
-We apply the routing signal in log space. Let $\ell_{\mathrm{old}}(x) \in \mathbb{R}^{K_0}$ and $\ell_{\mathrm{new}}(x) \in \mathbb{R}^{K_{\mathrm{new}}}$ be the raw logit vectors from the two heads. The gated logits are computed by adding the log of each head's routing score:
+We apply the routing signal in log space. Let $\ell_{\mathrm{old}}(x) \in \mathbb{R}^{K_{<t}}$ and $\ell_{\mathrm{new}}(x) \in \mathbb{R}^{K_t}$ be the raw logit vectors from the two paths. The gated logits are computed by adding the log of each path's routing score:
 \begin{align}
 \tilde{\ell}_{\mathrm{old}}(x) &= \ell_{\mathrm{old}}(x) + \log s_{\mathrm{old}}(x),\label{eq:routing-old}\\
 \tilde{\ell}_{\mathrm{new}}(x) &= \ell_{\mathrm{new}}(x) + \log s_{\mathrm{new}}(x).\label{eq:routing-new}
 \end{align}
-The two gated vectors are concatenated into a joint prediction over all $K_0 + K_{\mathrm{new}}$ classes:
+The two gated vectors are concatenated into a joint prediction over all $K_{<t} + K_t$ classes:
 \begin{equation}\label{eq:concat}
 \hat{y} = \mathrm{softmax}\bigl([\,\tilde{\ell}_{\mathrm{old}}(x)\;;\;\tilde{\ell}_{\mathrm{new}}(x)\,]\bigr).
 \end{equation}
-In softmax space, adding $\log s$ is equivalent to multiplying the head's class probabilities by $s$: the old-head probabilities are scaled by $s_{\mathrm{old}}(x)$ and the new-head probabilities by $s_{\mathrm{new}}(x)$, so both heads contribute to every prediction in proportion to the sample's estimated old and new knowledge. As $\tau \to 0$ the sigmoid sharpens toward a step function and $s_{\mathrm{old}}$ approaches $0$ or $1$; as $\tau \to \infty$ the sigmoid flattens and both heads contribute near-equally. \S\ref{sec:eval-ablation-tau} reports the empirical trade-off.
+In softmax space, adding $\log s$ is equivalent to multiplying the head's class probabilities by $s$: the old-head probabilities are scaled by $s_{\mathrm{old}}(x)$ and the new-head probabilities by $s_{\mathrm{new}}(x)$, so both heads contribute to every prediction according to the flow's historical-class compatibility. As $\tau \to 0$ the sigmoid sharpens toward a step function and $s_{\mathrm{old}}$ approaches $0$ or $1$; as $\tau \to \infty$ the sigmoid flattens and both heads contribute near-equally. \S\ref{sec:eval-ablation-tau} reports the empirical trade-off.
 
 % Topic sentence 4: why dual heads (design justification)
 We separate old and new paths because standard head expansion makes their logits compete within one trainable decision space~\cite{rebuffi2017icarl,wu2019bic}. Under imbalanced replay, optimization can favor the newly arriving group. Freezing the preceding path prevents direct updates to its class-specific parameters, while the calibration step makes its logits comparable with those of the new head. Table~\ref{tab:ablation} measures the contribution of this separation.
@@ -156,7 +156,7 @@ We freeze the preceding prediction path and optimize the adapter, new-class path
 Here $\ell_{\mathrm{old}}$ denotes the preceding path's logits after the trainable old-path bias, so the KL term anchors this adjustment to the frozen teacher output; the class-specific parameters of $F_{t-1}$ remain frozen. $\mathcal{L}_{\mathrm{CE}}$ is cross-entropy on the concatenated output over all classes; $\mathcal{L}_{\mathrm{local}}$ is cross-entropy restricted to the new head on new-class samples; $\mathcal{L}_{\mathrm{margin}}$ penalizes the old path for outscoring the correct new-class logit, weighted by $s_{\mathrm{new}}(x)$; and $\mathcal{L}_{\mathrm{reg}} = \|a(x) - f(x)\|_2^2$ regularizes the adapter shift from the frozen features. The replay buffer uses 1\% of the old training data in the main comparison; \S\ref{sec:eval-buffer} sweeps this ratio.
 
 \paragraph{Phase 3: Calibration refinement.}
-After incremental training, we freeze both prediction paths and refine $(b_{\mathrm{old}}, c_{\mathrm{new}}, b_{\mathrm{new}})$ on a balanced mixed calibration set by minimizing cross-entropy. The old portion is sampled from replay memory; the new portion is held out from the current increment.
+After incremental training, we freeze both prediction paths and refine $(b_{\mathrm{old}}, c_{\mathrm{new}}, b_{\mathrm{new}})$ on a balanced mixed calibration set by minimizing cross-entropy. The old portion is sampled from replay memory; the new portion comes from a fixed new-class validation partition that is excluded from final testing.
 
 \subsection{Recursive Multi-step Update}\label{sec:multistep}
 For sequential increments, RAR applies the same construction recursively. After increment $t$, the complete calibrated classifier $F_t$, including its earlier routing hierarchy, is frozen and used as the old path at increment $t+1$. The replay buffer is resampled from all classes seen through $t$, and a fresh reconstructor, threshold, temperature, adapter, and new-class head are fitted for the next class block. Consequently, the old output dimension grows from $\sum_{j=0}^{t-1}K_j$ to $\sum_{j=0}^{t}K_j$ without flattening the previous heads into a newly trainable shared classifier. This is the protocol used in the five-increment experiment in \S\ref{sec:eval-buffer}.
@@ -236,8 +236,8 @@ The temperature $\tau$ trades routing determinism against path fusion. In the im
 
 RAR is designed under two key assumptions that define its applicability.
 
-First, replay memory should provide representative coverage of previously learned knowledge. If replay samples fail to capture the old-class distribution, the reconstructor may learn an incomplete representation of old knowledge, leading to inaccurate routing scores. \S\ref{sec:eval-buffer} evaluates different replay buffer sizes and shows that RAR remains robust even under a memory ratio of 0.005.
+First, replay memory should provide representative coverage of previously learned classes. If replay samples fail to capture the historical-class distribution, the reconstructor may learn an incomplete historical manifold, leading to inaccurate routing scores. \S\ref{sec:eval-buffer} evaluates different replay buffer sizes and shows that RAR remains robust even under a memory ratio of 0.005.
 
 Second, reconstruction error should exhibit sufficient separability between old and emerging knowledge. When old and new classes have highly similar feature representations, reconstruction errors may overlap, reducing the reliability of the compatibility score. Figure~\ref{fig:e0-separability} shows the observed separation across the six evaluated datasets.
 
-These assumptions characterize the applicability of RAR rather than strict limitations. RAR is most effective when replay samples preserve representative old knowledge and when old and emerging knowledge exhibit distinguishable representation patterns.
+These assumptions characterize the applicability of RAR rather than strict limitations. RAR is most effective when replay samples preserve representative historical-class coverage and when old and emerging classes exhibit distinguishable representation patterns.

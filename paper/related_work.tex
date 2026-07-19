@@ -37,7 +37,7 @@ Calibration-based methods such as BiC~\cite{wu2019bic} learn a linear correction
 Replay-based methods (DER~\cite{yan2021der}) store old samples or features and replay them during incremental training. The structural limitation is the buffer: a fixed buffer cannot represent the full old-class distribution, and the model's behavior on unstored samples inherits the buffer's under-representation.
 
 % What RAR does
-RAR adds a per-sample old-versus-new score derived from reconstruction error. The score gates the two prediction paths and weights the distillation and margin losses, while replay supplies the old samples used to fit the reconstructor and train the incremental model.
+RAR adds a per-flow old/new compatibility score derived from reconstruction error. The score gates the two class paths and weights the distillation and margin losses, while replay supplies the historical samples used to fit the reconstructor and train the incremental model.
 
 \subsection{Task Inference and Expert Routing}
 
@@ -51,4 +51,4 @@ RAR does not claim reconstruction-based task inference or multi-head CIL as new.
 Encrypted-traffic classification research has produced a series of strong backbones (ET-BERT~\cite{lin2022etbert}, AppScanner, ETC-PS, FlowLens, CNN-based, CNN-emb, EBSNN, FS-Net, GraphDApp, MM4flow) that pre-train on packet-level features and reach high accuracy on static label sets. The structural limitation of this line of work is that it solves representation learning, not incremental learning: a stronger backbone still forgets old classes when its classification head expands to accommodate new ones. We quantify this in \S\ref{sec:eval-bgroup}: naive incremental training forgets across all nine backbones on NUDT-Mobile, and RAR (on top of ET-BERT) breaks out of the band.
 
 % What RAR does
-RAR's reconstruction-error routing operates on frozen encoder features and therefore depends on their separability. The routing mechanism does not require the encoder itself to be incremental-aware, and its per-sample score can be incorporated into frozen-encoder CIL pipelines. Recent work on incremental representation learning, such as MEMENTO~\cite{memento2024}, instead adapts the backbone to the class stream. RAR studies the complementary routing problem; combining the two forms of adaptation remains future work.
+RAR's reconstruction-error routing operates on frozen encoder features and therefore depends on their separability. The routing mechanism does not require the encoder itself to be incremental-aware, and its per-flow score can be incorporated into frozen-encoder CIL pipelines. Recent work on incremental representation learning, such as MEMENTO~\cite{memento2024}, instead adapts the backbone to the class stream. RAR studies the complementary routing problem; combining the two forms of adaptation remains future work.
