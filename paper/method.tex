@@ -27,7 +27,7 @@
 % share the same thesis. We introduce the mechanism at the abstraction
 % level; implementation follows in the subsections.
 
-RAR's design follows a single line: per-flow historical compatibility, reconstruction-aware soft routing, dual class paths, and calibration. A reconstruction autoencoder over frozen traffic representations produces an old/new compatibility score for each flow. The same score weights the incremental objectives during training and integrates a frozen historical-class path with a trainable new-class path during inference. Logit calibration then maps the two outputs into a unified traffic-class space. The rest of this section defines each component and the assumptions that bound the mechanism.
+RAR's design follows a single line: per-flow historical-class compatibility, reconstruction-aware soft routing, dual class paths, and calibration. A reconstruction autoencoder over frozen traffic representations produces an old/new compatibility score for each flow. During training, the score weights the old-class distillation loss and new-class cross-path margin; during inference, it integrates a frozen historical-class path with a trainable new-class path. Logit calibration then maps the two outputs into a unified traffic-class space. The rest of this section defines each component and the assumptions that bound the mechanism.
 
 \begin{figure*}[t]
 \centering
@@ -148,12 +148,12 @@ RAR training proceeds in three phases at each increment.
 We fit the reconstruction autoencoder $g_\phi$ on frozen-encoder features of replayed old samples by minimizing $\mathcal{L}_{\mathrm{recon}} = \frac{1}{|\mathcal{B}|}\sum_{x \in \mathcal{B}} \|g_\phi(f(x)) - f(x)\|_2^2$. We then estimate $\theta$ and $\tau$ from replayed-old and held-out-new errors as described in \S\ref{sec:knowledge}, and freeze $g_\phi$.
 
 \paragraph{Phase 2: Incremental training.}
-We freeze the preceding prediction path and optimize the adapter, new-class pathway, and calibration scalars with the following composite loss:
+We freeze the preceding prediction path and optimize the adapter, new-class pathway, and calibration scalars on the mixed incremental training set $\mathcal{S}_t=\mathcal{B}_{t-1}\cup\mathcal{D}_t$ with the following composite loss:
 \begin{align}
 \mathcal{L} &= \mathcal{L}_{\mathrm{CE}} + \alpha \mathcal{L}_{\mathrm{distill}} + \beta \mathcal{L}_{\mathrm{local}} + \gamma \mathcal{L}_{\mathrm{margin}} + \delta \mathcal{L}_{\mathrm{reg}},\label{eq:loss}\\[2pt]
-\mathcal{L}_{\mathrm{distill}} &= \frac{1}{Z}\sum_{x \in \mathcal{B}} s_{\mathrm{old}}(x)\, D_{\mathrm{KL}}\bigl(F_{t-1}(x) \;\big\|\; \ell_{\mathrm{old}}(x)\bigr).\label{eq:distill}
+\mathcal{L}_{\mathrm{distill}} &= \frac{1}{Z}\sum_{x \in \mathcal{S}_t} s_{\mathrm{old}}(x)\, D_{\mathrm{KL}}\bigl(F_{t-1}(x) \;\big\|\; \ell_{\mathrm{old}}(x)\bigr).\label{eq:distill}
 \end{align}
-Here $\ell_{\mathrm{old}}$ denotes the preceding path's logits after the trainable old-path bias, so the KL term anchors this adjustment to the frozen teacher output; the class-specific parameters of $F_{t-1}$ remain frozen. $\mathcal{L}_{\mathrm{CE}}$ is cross-entropy on the concatenated output over all classes; $\mathcal{L}_{\mathrm{local}}$ is cross-entropy restricted to the new head on new-class samples; $\mathcal{L}_{\mathrm{margin}}$ penalizes the old path for outscoring the correct new-class logit, weighted by $s_{\mathrm{new}}(x)$; and $\mathcal{L}_{\mathrm{reg}} = \|a(x) - f(x)\|_2^2$ regularizes the adapter shift from the frozen features. The replay buffer uses 1\% of the old training data in the main comparison; \S\ref{sec:eval-buffer} sweeps this ratio.
+Here $Z=\sum_{x\in\mathcal{S}_t}s_{\mathrm{old}}(x)$ normalizes the per-flow weights. $\ell_{\mathrm{old}}$ denotes the preceding path's logits after the trainable old-path bias, so the KL term anchors this adjustment to the frozen teacher output; the class-specific parameters of $F_{t-1}$ remain frozen. $\mathcal{L}_{\mathrm{CE}}$ is cross-entropy on the concatenated output over all classes; $\mathcal{L}_{\mathrm{local}}$ is cross-entropy restricted to the new head on new-class samples; $\mathcal{L}_{\mathrm{margin}}$ penalizes the old path for outscoring the correct new-class logit, weighted by $s_{\mathrm{new}}(x)$; and $\mathcal{L}_{\mathrm{reg}} = \|a(x) - f(x)\|_2^2$ regularizes the adapter shift from the frozen features. The replay buffer uses 1\% of the old training data in the main comparison; \S\ref{sec:eval-buffer} sweeps this ratio.
 
 \paragraph{Phase 3: Calibration refinement.}
 After incremental training, we freeze both prediction paths and refine $(b_{\mathrm{old}}, c_{\mathrm{new}}, b_{\mathrm{new}})$ on a balanced mixed calibration set by minimizing cross-entropy. The old portion is sampled from replay memory; the new portion comes from a fixed new-class validation partition that is excluded from final testing.

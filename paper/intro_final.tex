@@ -42,7 +42,7 @@ RAR (Reconstruction-Aware Routing) is a reconstruction-conditioned CIL framework
 We make three contributions.
 \begin{enumerate}
   \item \textbf{Reconstruction-conditioned encrypted-traffic CIL.} We formulate compatibility with a replay-derived historical traffic manifold as a continuous per-flow signal for balancing previously learned and newly arriving traffic classes.
-  \item \textbf{Calibrated dual-path integration.} We incorporate the same compatibility signal into incremental loss weighting and soft logit routing between frozen old-class and trainable new-class paths, enabling joint prediction over all seen classes without task identifiers.
+  \item \textbf{Calibrated dual-path integration.} We use the same compatibility signal to weight the old-class distillation loss and new-class cross-path margin during training, and to softly route logits between frozen old-class and trainable new-class paths during inference, enabling joint prediction over all seen classes without task identifiers.
   \item \textbf{Evaluation across encrypted-traffic domains.} Across six public datasets, RAR reduces forgetting by 35.5\%--67.5\% and improves mixed-class accuracy by up to 11.7 percentage points over the evaluated classical CIL baselines. Additional studies examine backbone choice, incremental steps, replay budgets, and component contributions.
 \end{enumerate}
 
