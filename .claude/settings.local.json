@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(./setup *)",
-      "Bash(python -c \"from PIL import Image; img = Image.open\\('f:/paperwritting/paper/figures/robustness.png'\\); print\\('Size:', img.size\\); print\\('Mode:', img.mode\\)\")"
+      "Bash(python -c \"from PIL import Image; img = Image.open\\('f:/paperwritting/paper/figures/robustness.png'\\); print\\('Size:', img.size\\); print\\('Mode:', img.mode\\)\")",
+      "Bash(pdflatex --version)",
+      "Bash(make)",
+      "Bash(pdflatex -interaction=nonstopmode paper)",
+      "Bash(bibtex paper *)"
     ]
   }
 }
